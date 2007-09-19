@@ -1,0 +1,51 @@
+2007-08-17  Diab Jerius  <djerius@cfa.harvard.edu>
+
+	Tag: 0.04
+
+2007-08-17 17:01 -0400  djerius  <djerius@cfa.harvard.edu>  (06e0a82a4657 [tip])
+
+	* lib/App/Env.pm, lib/App/Env/Example.pm, t/App/Env/Site1/App1.pm:
+	The AppOpts hash is now passed as the sole parameter to the envs
+	function.
+
+	Clean up mess from previous work where the app env module's envs()
+	function took a more complicated input parameter. Now just gets the
+	AppOpts hash directly.
+
+2007-08-17 14:39 -0400  djerius  <djerius@cfa.harvard.edu>  (d28d330df856)
+
+	* MANIFEST:
+	remove META.yml; seems to mess up make dist
+
+2007-08-17  Diab Jerius  <djerius@cfa.harvard.edu>
+
+	Tag: 0.03
+	
+2007-08-17 12:26 -0400  djerius  <djerius@cfa.harvard.edu>  (7a3552e41221 [tip])
+
+	* Makefile.PL, lib/App/Env.pm:
+	don't use Module::Load::Conditional. clean up envs invocation.
+
+	Originally Module::Load::Conditional was used to determine whether a
+	module existed separately from whether there was an error during its
+	compilation (Module::Load doesn't distinguish this case). However
+	Module::Load::Conditional's dependency chain is larger than I'd
+	like.
+
+	Instead, Module::Load was emulated using eval "require $module".
+	Same results, perhaps less efficient because it requires a run time
+	compilation.
+
+	 calling the envs function in the application environment module is
+	no longer done with eval (once I figured out how to get the symbolic
+	reference to work).
+
+
+2007-08-16  Diab Jerius  <djerius@cfa.harvard.edu>
+
+	Tag: 0.02
+	* work around lack of weak references in older perls
+
+	Tag: 0.01
+	* initial release
+

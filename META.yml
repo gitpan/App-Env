@@ -1,0 +1,15 @@
+# http://module-build.sourceforge.net/META-spec.html
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         App-Env
+version:      0.04
+version_from: lib/App/Env.pm
+installdirs:  site
+requires:
+    Env::Path:                     0
+    File::Temp:                    0
+    Params::Validate:              0
+    Scalar::Util:                  0
+    Test::More:                    0
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.30_01

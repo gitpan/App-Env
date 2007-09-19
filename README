@@ -1,0 +1,63 @@
+App-Env
+=======
+
+This module is useful when a Perl program must run external
+applications in environments specific to them. Often an application or
+application suite requires a specific environmental variable setup to
+operate correctly.
+
+App::Env provides a uniform mechanism for accessing environments and
+is most useful in situations where multiple applications with
+differing environments are to be invoked, although it is still useful
+in simpler contexts.
+
+App::Env may be used to simply merge (import) the application's
+environment directly into the current environment.  It can also
+provide the environment as an object to provide more fine grained
+operations.
+
+To avoid redoing expensive setup operations environments are cached.
+
+
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+  Params::Validate
+  Scalar::Util
+  Module::Load::Conditional
+  File::Temp
+  Test::More
+  Env::Path
+
+
+COPYRIGHT AND LICENCE
+
+Put the correct copyright and licence information here.
+
+Copyright (C) 2007 by the Smithsonian Astrophysical Observatory.
+
+App::Env is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
