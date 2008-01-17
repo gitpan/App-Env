@@ -5,7 +5,7 @@ package App::Env::Example;
 # script which defines the environment for an application.  Other
 # similar modules are Shell::Source and Shell::EnvImporter.
 
-use Shell:GetEnv;
+use Shell::GetEnv;
 
 
 sub envs

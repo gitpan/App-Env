@@ -1,8 +1,34 @@
-2007-08-17  Diab Jerius  <djerius@cfa.harvard.edu>
+2008-01-17 15:14 -0500  djerius  <djerius@cfa.harvard.edu>  (649b4e3e59e6 [tip])
 
-	Tag: 0.04
+	* bin/appexec, lib/App/Env.pm:
+	added appexec
 
-2007-08-17 17:01 -0400  djerius  <djerius@cfa.harvard.edu>  (06e0a82a4657 [tip])
+2008-01-17 15:13 -0500  djerius  <djerius@cfa.harvard.edu>  (f10f36d537d0)
+
+	* MANIFEST, MANIFEST.SKIP, Makefile.PL:
+	administrative cleanup; use Module::Install
+
+2008-01-17 14:16 -0500  djerius  <djerius@cfa.harvard.edu>  (8ab803f914ed)
+
+	* lib/App/Env.pm:
+	improve documentation
+
+2008-01-17 14:09 -0500  djerius  <djerius@cfa.harvard.edu>  (6a62010f989c)
+
+	* lib/App/Env/Example.pm:
+	fix typo
+
+2007-09-20 21:04 -0400  djerius  <djerius@cfa.harvard.edu>  (9d0a1aa99422)
+
+	* .hgtags:
+	Added tag 0.04 for changeset 60316599e900
+
+2007-09-20 21:04 -0400  djerius  <djerius@cfa.harvard.edu>  (60316599e900 [0.04])
+
+	* ChangeLog, Changes, lib/App/Env.pm:
+	update for release
+
+2007-08-17 17:01 -0400  djerius  <djerius@cfa.harvard.edu>  (06e0a82a4657)
 
 	* lib/App/Env.pm, lib/App/Env/Example.pm, t/App/Env/Site1/App1.pm:
 	The AppOpts hash is now passed as the sole parameter to the envs
@@ -17,11 +43,17 @@
 	* MANIFEST:
 	remove META.yml; seems to mess up make dist
 
-2007-08-17  Diab Jerius  <djerius@cfa.harvard.edu>
+2007-08-17 14:37 -0400  djerius  <djerius@cfa.harvard.edu>  (3f4fb7f7eab7)
 
-	Tag: 0.03
-	
-2007-08-17 12:26 -0400  djerius  <djerius@cfa.harvard.edu>  (7a3552e41221 [tip])
+	* .hgtags:
+	Added tag 0.03 for changeset d36b41d3f2f0
+
+2007-08-17 14:37 -0400  djerius  <djerius@cfa.harvard.edu>  (d36b41d3f2f0 [0.03])
+
+	* ChangeLog, Changes, lib/App/Env.pm:
+	update for release
+
+2007-08-17 12:26 -0400  djerius  <djerius@cfa.harvard.edu>  (7a3552e41221)
 
 	* Makefile.PL, lib/App/Env.pm:
 	don't use Module::Load::Conditional. clean up envs invocation.
@@ -40,12 +72,38 @@
 	no longer done with eval (once I figured out how to get the symbolic
 	reference to work).
 
+2007-08-17 12:20 -0400  djerius  <djerius@cfa.harvard.edu>  (d3d9720ca944)
 
-2007-08-16  Diab Jerius  <djerius@cfa.harvard.edu>
+	* t/badmodule.t:
+	add test for non-existent module
 
-	Tag: 0.02
-	* work around lack of weak references in older perls
+2007-08-16 17:11 -0400  djerius  <djerius@cfa.harvard.edu>  (d9b5f649ec19)
 
-	Tag: 0.01
-	* initial release
+	* .hgtags:
+	Added tag 0.02 for changeset 1dc9ba777697
+
+2007-08-16 17:11 -0400  djerius  <djerius@cfa.harvard.edu>  (1dc9ba777697 [0.02])
+
+	* ChangeLog, Changes, MANIFEST, lib/App/Env.pm:
+	update for release
+
+2007-08-16 17:04 -0400  djerius  <djerius@cfa.harvard.edu>  (45d4f9205efd)
+
+	* lib/App/Env.pm:
+	older perl's don't have weak references; code around that
+
+2007-08-16 16:08 -0400  djerius  <djerius@cfa.harvard.edu>  (4f63370307b0)
+
+	* .hgtags:
+	Added tag 0.01 for changeset f113452d5ba2
+
+2007-08-16 16:08 -0400  djerius  <djerius@cfa.harvard.edu>  (f113452d5ba2 [0.01])
+
+	* ChangeLog, Changes, LICENSE, MANIFEST, Makefile.PL, README,
+	lib/App/Env.pm, lib/App/Env/Example.pm, t/App-Env.t,
+	t/App/Env/App1.pm, t/App/Env/App2.pm, t/App/Env/Site.pm,
+	t/App/Env/Site1/App1.pm, t/App/Env/Site1/App2.pm,
+	t/App/Env/Site2/App1.pm, t/cache.t, t/env.t, t/envstr.t, t/site1.t,
+	t/site2.t, t/site3.t, t/system.t, t/use1.t, t/use2.t, t/use3.t:
+	initial version
 

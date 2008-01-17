@@ -1,24 +1,23 @@
-use ExtUtils::MakeMaker;
+use strict;
+use warnings;
+use inc::Module::Install;
 
-my $EUMM_VERSION = eval $ExtUtils::MakeMaker::VERSION;
+name 'App-Env';
 
+all_from 'lib/App/Env.pm';
+license 'gpl3';
 
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
-WriteMakefile(
-    NAME              => 'App::Env',
-    VERSION_FROM      => 'lib/App/Env.pm',
-    PREREQ_PM         => {
-			  Scalar::Util => 0,
-			  Params::Validate => 0,
-			  Test::More => 0,
-			  Env::Path => 0,
-			  File::Temp => 0
-			 },
-    ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM  => 'lib/App/Env.pm', # retrieve abstract from module
-       AUTHOR         => 'Diab Jerius <djerius@cpan.org>') : ()),
-    ( $EUMM_VERSION >= 6.31 ? (
-        LICENSE         => 'gpl',
-    ) : ()),
-);
+build_requires 'Test::More';
+
+requires 'Getopt::Long' => 2.24;
+requires 'Scalar::Util';
+requires 'Params::Validate';
+requires 'Env::Path';
+requires 'Pod::Usage';
+requires 'File::Temp';
+
+install_script 'bin/appexec';
+
+auto_install;
+
+WriteAll;

@@ -1,15 +1,25 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         App-Env
-version:      0.04
-version_from: lib/App/Env.pm
-installdirs:  site
-requires:
-    Env::Path:                     0
-    File::Temp:                    0
-    Params::Validate:              0
-    Scalar::Util:                  0
-    Test::More:                    0
-
+---
+abstract: 'manage application specific environments'
+author:
+  - 'Diab Jerius, <djerius@cpan.org>'
+build_requires:
+  Test::More: 0
 distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30_01
+generated_by: 'Module::Install version 0.68'
+license: gpl3
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.3.html
+  version: 1.3
+name: App-Env
+no_index:
+  directory:
+    - inc
+    - t
+requires:
+  Env::Path: 0
+  File::Temp: 0
+  Getopt::Long: 2.24
+  Params::Validate: 0
+  Pod::Usage: 0
+  Scalar::Util: 0
+version: 0.05

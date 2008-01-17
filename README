@@ -18,6 +18,8 @@ operations.
 
 To avoid redoing expensive setup operations environments are cached.
 
+The packaged appexec program provides this functionality for one-off command
+line invocations of programs.
 
 
 INSTALLATION
@@ -35,10 +37,10 @@ This module requires these other modules and libraries:
 
   Params::Validate
   Scalar::Util
-  Module::Load::Conditional
   File::Temp
   Test::More
   Env::Path
+  Getopt::Long
 
 
 COPYRIGHT AND LICENCE

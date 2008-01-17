@@ -30,7 +30,7 @@ use Carp;
 use Params::Validate qw(:all);
 
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use overload
   '%{}' => '_envhash',
@@ -629,94 +629,120 @@ App::Env - manage application specific environments
   # import environment from package1 then package2 into current
   # environment
   use App::Env ( $package1, $package2, \%opts );
-  
+
   # import an environment at your leisure
   use App::Env;
   App::Env::import( $package, \%opts );
-  
+
   # retrieve an environment but don't import it
   $env = App::Env->new( $package, \%opts );
-  
+
   # execute a command in that environment; just as a convenience
   $env->system( $command );
-  
+
   # exec a command in that environment; just as a convenience
   $env->exec( $command );
-  
+
   # oh bother, just import the environment
   $env->import;
-  
+
   # cache this environment as the default for $package
   $env->cache( 1 );
-  
+
   # uncache this environment if it is the default for $package
   $env->cache( 0 );
-  
+
   # generate a string compatible with the *NIX env command
   $envstr = $env->str( \%opts );
-  
+
   # or, stringify it for (mostly) the same result
   system( 'env -i $env command' );
-  
+
   # pretend it's a hash; read only, though
   %ENV = %$env;
 
 
 =head1 DESCRIPTION
 
-This module is useful when a Perl program must run external
-applications in environments specific to them. Often an application or
-application suite requires a specific environmental variable setup to
-operate correctly.
+B<App::Env> presents a uniform interface to initializing environments
+for applications which require special environments.  The code to
+create such environements is encapsulated in separate modules for each
+application suite (e.g. B<App::Env::MyApp>), while B<App::Env> handles
+the loading, merging, and caching of environments.
 
-B<App::Env> provides a uniform mechanism for accessing environments
-and is most useful in situations where multiple applications with
-differing environments are to be invoked, although it is still useful
-in simpler contexts.
+B<App::Env> is probably most useful in situations where a Perl program
+must invoke multiple applications each of which may require an
+environment different and possibly incompatible from the others.  The
+simplified interface it provides makes it useful even in less
+complicated situations.
 
-B<App::Env> may be used to simply merge (C<import>) the application's
-environment directly into the current environment.  It can also provide
-the environment as an object to provide more fine grained operations.
-
-To avoid redoing expensive setup operations environments are cached.
-
-
-=head2 Application Environments
+=head2 Initializing Application Environments
 
 B<App::Env> does not itself provide the environments for applications.
-It relies upon application specific modules to do so.  See
-B<App::Env::Example> for information on how to write such modules.
+It relies upon application specific Perl modules to do so.  Such
+modules provide a single entry point (B<envs()>) which will be called
+by B<App::Env> when that environment is requested.  Application
+specific options (e.g. version) may be passed to the module.
 
-B<App::Env> can accomodate situations where there may be different
-contexts for loading an application.
+See B<App::Env::Example> for information on how to write such modules.
+
+=head2 Managing Environments
+
+In the simplest usage, B<App::Env> can merge (C<import>) the
+application's environment directly into the current environment.
+For situations where multiple incompatible environments are required,
+it can encapsulate those as objects with convenience methods to
+easily run applications within those environments.
+
+=head2 Environment Caching
+
+By default the environmental variables returned by the application
+environment modules are cached.  A cache entry is given a unique key
+which is by default generated from the module name.  This key does
+B<not> take into account the contents (if any) of the B<AppOpts> hash
+(see below).  If the application's environment changes based upon
+B<AppOpts>, an attempt to load the same application with different
+values for B<AppOpts> will lead to the retrieval of the first, cached
+environment, rather than the new environment.  To avoid this, use the
+B<CacheID> option to explicitly specify a unique key for environments
+if this will be a problem.
+
+If multiple packages are loaded via a single call to B<import> or
+B<new>, the individual packages will be cached, as will the merged
+environment.  The latter's cache key will by default be generated from
+all of the names of the environment modules invoked; this can be
+overridden using the B<CacheID> option.
+
+=head2 Site Specific Contexts
+
+In some situations an application's environment will depend upon which
+host or network it is executed on.  In such instances B<App::Env> provides
+a means for loading an alternate application module.  It does this
+by loading the first existant module from the following set of module names:
+
+  App::Env::$SITE::$app
+  App::Env::$SITE::$app
+  App::Env::$app
+
+The C<$SITE> variable is taken from the environment variable
+B<APP_ENV_SITE> if it exists, or from the B<Site> option to the class
+B<import()> function or the B<new()> object constructor.
+Additionally, if the B<APP_ENV_SITE> environemnt variable does I<not
+exist> (it is not merely empty), B<App::Env> will first attempt to
+load the B<App::Env::Site> module, which can set the B<APP_ENV_SITE>
+environment variable.
 
 Take as an example the situation where an application's environment is
 stored in F</usr/local/myapp/setup> on one host and
 F</opt/local/myapp/setup> on another.  One could include logic in a
 single C<App::Env::myapp> module which would recognize which file is
-appropriate.  A cleaner method is to have separate site-specific
-modules.
+appropriate.  If there are multiple applications, this gets messy.  A
+cleaner method is to have separate site-specific modules (e.g.
+C<App::Env::LAN1::myapp> and C<App::Env::LAN2::myapp>), and switch
+between them based upon the B<APP_ENV_SITE> environment variable.
 
-To that end, B<App::Env> supports the B<Site> option in the Class
-B<import()> function and the B<new()> constructor, as well as the
-environmental variable B<APP_ENV_SITE>.  When B<App::Env> is asked to
-load an environment for application B<$app> it searches for a module
-with the following names in the given order:
-
-	"App::Env::$ENV{APP_ENV_SITE}::$app"
-	"App::Env::${Site}::$app"
-	"App::Env::$app"
-
-where C<${Site}> is the value of the B<Site> option.
-
-For further convenience, if the environmental variable B<APP_ENV_SITE>
-does I<not> exist, B<App::Env> will attempt to load the module
-B<App::Env::Site>.  (If B<APP_ENV_SITE> is empty (null), an
-B<App::Env::Site> module is ignored).
-
-This user provided module should attempt to
-deduce the site and set the B<APP_ENV_SITE> environmental variable
-accordingly.  A crude example:
+The logic for setting that variable might be encoded in an
+B<App::Env::Site> module to transparenlty automate things:
 
   package App::Env::Site;
 
@@ -736,24 +762,16 @@ accordingly.  A crude example:
 
   1;
 
-=head2 Caching
 
-By default the environmental variables returned by the application
-environment modules are cached.  A cache entry is given a unique key
-which is by default generated from the module name.  This key does
-B<not> take into account the contents (if any) of the B<AppOpts> hash
-(see below).  If the application's environment changes based upon
-B<AppOpts>, an attempt to load the same application with different
-values for B<AppOpts> will lead to the retrieval of the first, cached
-environment, rather than the new environment.  To avoid this, use the
-B<CacheID> option to explicitly specify a unique key for environments
-if this will be a problem.
+=head1 INTERFACE
 
-If multiple packages are loaded via a single call to B<import> or
-B<new>, the individual packages will be cached, as will the merged
-environment.  The latter's cache key will by default be generated from
-all of the names of the environment modules invoked; this can be
-overridden using the B<CacheID> option.
+B<App::Env> may be used to directly import an application's
+environment into the current environment, in which case the
+non-object oriented interface will suffice.
+
+For more complicated uses, the object oriented interface allows for
+manipulating multiple separate environments.
+
 
 =head2 Using B<App::Env> without objects
 
@@ -995,7 +1013,7 @@ This execs the passed command in the environment defined by B<$env>.
 It has the same argument and returned value convention as the core
 Perl B<exec> command.
 
-=item exec
+=item qexec
 
   $env->qexec( $command, @args );
 
@@ -1066,8 +1084,17 @@ This hopefully won't overfill the shell's command buffer. If you need
 to specify only parts of the environment, use the B<str> method to
 explicitly create the arguments to the B<env> command.
 
+=head1 BUGS AND LIMITATIONS
+
+No bugs have been reported.
+
+Please report any bugs or feature requests to
+C<bug-app-env@rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=App-Env>.
+
 =head1 SEE ALSO
 
+B<appexec>
 
 
 =head1 AUTHOR

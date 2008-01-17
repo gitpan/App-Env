@@ -1,10 +1,25 @@
-Changes
+bin/appexec
 ChangeLog
+Changes
+inc/Module/AutoInstall.pm
+inc/Module/Install.pm
+inc/Module/Install/AutoInstall.pm
+inc/Module/Install/Base.pm
+inc/Module/Install/Can.pm
+inc/Module/Install/Fetch.pm
+inc/Module/Install/Include.pm
+inc/Module/Install/Makefile.pm
+inc/Module/Install/Metadata.pm
+inc/Module/Install/Scripts.pm
+inc/Module/Install/Win32.pm
+inc/Module/Install/WriteAll.pm
 lib/App/Env.pm
 lib/App/Env/Example.pm
 LICENSE
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
+MANIFEST.SKIP
+META.yml
 README
 t/App-Env.t
 t/App/Env/App1.pm
@@ -13,6 +28,7 @@ t/App/Env/Site.pm
 t/App/Env/Site1/App1.pm
 t/App/Env/Site1/App2.pm
 t/App/Env/Site2/App1.pm
+t/badmodule.t
 t/cache.t
 t/env.t
 t/envstr.t
@@ -23,4 +39,3 @@ t/system.t
 t/use1.t
 t/use2.t
 t/use3.t
-META.yml                                 Module meta-data (added by MakeMaker)

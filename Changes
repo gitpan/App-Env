@@ -1,5 +1,9 @@
 Revision history for Perl extension App::Env.
 
+0.05  Thu Jan 17 15:15:38 EST 2008
+        - improve(?) documentation
+	- add appexec program
+
 0.04  Fri Aug 17 17:02:34 EDT 2007
         - clean up passing of AppOpts to app env module's envs() func
 
