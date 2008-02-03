@@ -38,36 +38,31 @@ App::Env::import( 'App1', { CacheID => 'foo' } );
 is( $ENV{Site1_App1}, 3, "import func 3, cache on, old cache id" );
 
 
-# merge.  should pull in cached App1
+# merge.  should pull in fresh App1
 App::Env::import( 'App1', 'App2' );
-ok( $ENV{Site1_App1} == 2 &&
-    $ENV{Site1_App2} == 1, "merge cache: 1" );
+is( $ENV{Site1_App1}, 4, "merge cache: check App1" );
+is( $ENV{Site1_App2}, 1, "merge cache: check App2" );
 
-# was App2 cached?
+# App1 cache should be untouched
+App::Env::import( 'App1' );
+is( $ENV{Site1_App1}, 2, "merge cache: 2" );
+
+# App2 hasn't been cached, so should increment
 App::Env::import( 'App2' );
-is( $ENV{Site1_App2}, 1, "merge cache: 2" );
+is( $ENV{Site1_App2}, 2, "merge cache: 3" );
+
 
 # uncache App2 and import it to increment the counter,
 # then reimport merge to see if it's being cached
 App::Env::uncache( App => 'App2' );
 App::Env::import( 'App2' );
-is( $ENV{Site1_App2}, 2, "merge cache: 3" );
+is( $ENV{Site1_App2}, 3, "merge cache: 4" );
 
 # now check merge.  should be same as above as it was cached
 App::Env::import( 'App1', 'App2' );
-ok( $ENV{Site1_App1} == 2 &&
-    $ENV{Site1_App2} == 1, "merge cache: 4" );
-
-# once more, but force an update of App2.
-# should be same as above as it was cached
-App::Env::import( 'App1', [ 'App2', { Force => 1 } ] );
-ok( $ENV{Site1_App1} == 2 &&
+ok( $ENV{Site1_App1} == 4 &&
     $ENV{Site1_App2} == 1, "merge cache: 5" );
 
-# but now App2's counter should be incremented
-# was App2 cached?
-App::Env::import( 'App2' );
-is( $ENV{Site1_App2}, 3, "merge cache: 6" );
 
 App::Env::uncache( All => 1 );
 is ( keys %App::Env::EnvCache, 0, "uncache all" );
@@ -98,17 +93,17 @@ App::Env::Site1::App2::reset();
     $obj1 = App::Env->new( 'App1' );
     is( $obj1->env('Site1_App1'), 2, "method 1, cache on" );
 
-    # merge.  should pull in cached App1
+    # merge.  should pull in new App1
     $obj1 = App::Env->new( 'App1', 'App2' );
-    ok( $obj1->env('Site1_App1') == 2 &&
+    ok( $obj1->env('Site1_App1') == 3 &&
 	$obj1->env('Site1_App2') == 1, "obj merge: 1" );
 
     # merge.  force reload of all apps
     $obj2 = App::Env->new( 'App1', 'App2', { Force => 1 } );
-    ok( $obj2->env('Site1_App1') == 3 &&
+    ok( $obj2->env('Site1_App1') == 4 &&
 	$obj2->env('Site1_App2') == 2, "obj merge: 2" );
 
     # but obj1 should be the same
-    ok( $obj1->env('Site1_App1') == 2 &&
+    ok( $obj1->env('Site1_App1') == 3 &&
 	$obj1->env('Site1_App2') == 1, "obj merge: 1 check" );
 }

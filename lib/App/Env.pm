@@ -30,7 +30,7 @@ use Carp;
 use Params::Validate qw(:all);
 
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use overload
   '%{}' => '_envhash',
@@ -134,11 +134,15 @@ sub _load_envs
     # are being loaded in one call.  Checking caching requires that we generate
     # a cacheid from the applications' cacheids.
 
+    # if import is called as import( [$app, \%opts], \%shared_opts ), this is
+    # equivalent to import( $app, { %shared_opts, %opts } ), but we still validate
+    # %shared_opts as SharedOptions, just to be precise.
 
     # if there's a single application passed as a scalar (rather than
-    # an array containing the app name and options, treat @opts as
+    # an array containing the app name and options), treat @opts as
     # ApplicationOptions, else SharedOptions
-    my %opts =  validate( @opts, 
+
+    my %opts =  validate( @opts,
 			  @apps == 1 && ! ref($apps[0])
 			       ? \%ApplicationOptions
 			       : \%SharedOptions );
@@ -155,29 +159,61 @@ sub _load_envs
 	# initialize the package specific opts from the shared opts
 	my %app_opt = %opts;
 
-	# don't use the shared CacheID option if there are
-	# multiple applications. it'll be used for the merged
-	# environment
-	delete $app_opt{CacheID}
-	  unless @apps == 1 && ! ref $app;
+        # special filtering of options if this is part of a multi-app
+        # merge
+        if ( @apps > 1 )
+        {
+            # don't use the shared CacheID option
+            delete $app_opt{CacheID};
 
+            # don't cache individual apps in a merged environment,
+            # as the cached environments will be polluted.
+            delete $app_opt{Cache};
+
+            # ignore a Force option.  This will be turned on later;
+            # if set now it will prevent proper error checking
+            delete $app_opt{Force};
+        }
+
+        # handle application specific options.
 	if ( 'ARRAY' eq ref($app) )
 	{
 	    ( $app, my $opts ) = @$app;
-	    croak( "package options for $app must be a hashref\n" )
+	    croak( "$app: package options must be a hashref\n" )
 	      unless 'HASH' eq ref $opts;
 
 	    %app_opt = ( %app_opt, %$opts );
+
+            if ( @apps > 1 )
+            {
+                for my $iopt ( qw( Cache Force ) )
+                {
+                  if ( exists $app_opt{$iopt})
+                  {
+                      croak( "$app: do not specify the $iopt option for individual packages in a merge\n" );
+                      delete $app_opt{$iopt};
+                  }
+              }
+            }
 	}
+
+        # set forced options for apps in multi-app merges, otherwise
+        # the defaults will be set by the call to validate below.
+        if ( @apps > 1 )
+        {
+            $app_opt{Force} = 1;
+            $app_opt{Cache} = 0;
+        }
 
 	# validate possible package options and get default
 	# values. Params::Validate wants a real array
 	my ( @opts ) = %app_opt;
 
-	# return an environment object, but don't load it unless Force
-	# is set.  this prevents unnecessary loading of uncached
-	# environments if later it turns out this is a cached multi-application
-	# environment
+	# return an environment object, but don't load it. we need the
+        # module name to create a cacheid for the merged environment.
+        # don't load now to prevent unnecessary loading of uncached
+        # environments if later it turns out this is a cached
+        # multi-application environment
 	%app_opt = ( validate( @opts, \%ApplicationOptions ));
 	my $appo = App::Env::_app->new( ref => $self,
 					app => $app,
@@ -208,23 +244,25 @@ sub _load_envs
     # ok, create new environment by iteration through the apps
     else
     {
-	my %env;
+        # we don't want to merge environments, as apps may
+        # modify a variable that we don't know how to merge.
+        # PATH is easy, but we have no idea what might be in
+        # others.  so, let the apps handle it.
+
+        # apps get loaded in the current environment.
+        local %ENV = %ENV;
+
 	my @modules;
 	foreach my $app ( @Apps )
 	{
-	    my $env = $app->load;
-
 	    push @modules, $app->{module};
 
-	    # copy environment to object's
-	    while ( my ($key, $val) = each %{$env} )
-	    {
-		$env{$key} = $val;
-	    }
+            # embrace new merged environment
+            %ENV = %{$app->load};
 	}
 
 	$App = App::Env::_app->new( ref => $self,
-				    env => \%env,
+				    env => { %ENV },
 				    module => join( $;, @modules),
 				    cacheid => $cacheid,
 				    opt => \%opts,
@@ -560,8 +598,7 @@ sub new
 
 	eval { Scalar::Util::weaken( $self->{ref} ) };
 
-	$self->load
-	  unless $self->{NoLoad} && !$self->{opt}{Force};
+	$self->load unless $self->{NoLoad};
 	delete $self->{NoLoad};
     }
 
@@ -708,10 +745,12 @@ B<CacheID> option to explicitly specify a unique key for environments
 if this will be a problem.
 
 If multiple packages are loaded via a single call to B<import> or
-B<new>, the individual packages will be cached, as will the merged
-environment.  The latter's cache key will by default be generated from
-all of the names of the environment modules invoked; this can be
-overridden using the B<CacheID> option.
+B<new> the packages will be loaded incremently in the order specified.
+In order to ensure a properly merged environment the packages will be
+loaded freshly (any caches will be ignored) and the merged environment
+will be cached.  The cache id will by default be generated from all of
+the names of the environment modules invoked; this can be overridden
+using the B<CacheID> option.
 
 =head2 Site Specific Contexts
 

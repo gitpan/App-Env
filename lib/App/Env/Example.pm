@@ -36,6 +36,29 @@ or, if there is a site specific version:
 
   App::Env::<SITE>::<application>
 
+
+It is very important that the loaded environment be based upon the
+I<current> environment.  For example, if the environment is derived
+from running a shell script, make sure either that the shell script is
+run without running the user's startup file, or that any differences
+between the current environment and that constructed by the script
+which are not due to the application are resolved in the current
+environment's favor.  For example, say that B<LD_LIBRARY_PATH> is set
+in the user's F<.cshrc> file:
+
+  setenv LD_LIBRARY_PATH /my/path1
+
+and that before invoking B<App::Env> the user has modified it to
+
+  /my/path1:/my/path2
+
+If a B<csh> script is sourced to create the environment, and B<csh> is
+not run with the B<-f> flag, the user's F<.cshrc> will be sourced, the
+user's modifications to B<LD_LIBRARY_PATH> will be lost, and breakage
+may happen.
+
+=head1 Functions
+
 They should define the following functions:
 
 =over

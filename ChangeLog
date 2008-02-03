@@ -1,4 +1,73 @@
-2008-01-17 15:14 -0500  djerius  <djerius@cfa.harvard.edu>  (649b4e3e59e6 [tip])
+2008-02-03  Diab Jerius  <djerius@cfa.harvard.edu>
+
+	Tag 0.06
+
+2008-02-03 14:10 -0500  djerius  <djerius@cfa.harvard.edu>  (63d9df4e0bbe [tip])
+
+	* Makefile.PL:
+	fix up dependencies
+
+2008-02-03 14:10 -0500  djerius  <djerius@cfa.harvard.edu>  (5ffd8de4e518)
+
+	* lib/App/Env.pm, lib/App/Env/Example.pm, t/cache.t:
+	fix multi-app environments
+
+	multi-app environments had a number of fundamental problems.
+
+	* the method for merging individual application's environments was
+	extremely simplistic and could result in parts of an app's
+	environment being reset.
+
+	* application environments were not necessarily based on the current
+	environment and when applied could reset the user's environment.
+	This problem was found for environments created by shell scripts
+	where the user's profile or .cshrc was sourced as part of the shell
+	invocation, in many cases resulting in a reset of the environment to
+	its inital state at login.
+
+	To avoid these problems, a new restriction was placed upon the
+	application specific modules. They must create their environments
+	based upon the current one, merging their changes into it. When
+	creating a merged environment, the application modules are
+	successively invoked on a copy of the current environment and the
+	final environment is used. Previously the modules' environments
+	were "merged" in a rather inflexible manner, resulting in
+	overwriting changes. This also means that 1) cached application
+	environments can't be used during a merger and 2) application
+	environments can't be cached during the course of a merger.
+
+2008-02-03 13:52 -0500  djerius  <djerius@cfa.harvard.edu>  (97935eccd72e)
+
+	* t/App/Env/App1.pm, t/App/Env/App2.pm, t/App/Env/Site1/App1.pm,
+	t/App/Env/Site1/App2.pm, t/App/Env/Site2/App1.pm:
+	added debug statements
+
+2008-01-17 15:59 -0500  djerius  <djerius@cfa.harvard.edu>  (255e3012e783)
+
+	* .hgtags:
+	Added tag 0.05 for changeset e312af21854f
+
+2008-01-17 15:54 -0500  djerius  <djerius@cfa.harvard.edu>  (e312af21854f [0.05])
+
+	* bin/appexec:
+	fixed incorrect Getopt::Long configuration
+
+2008-01-17 15:53 -0500  djerius  <djerius@cfa.harvard.edu>  (c45370921fbc)
+
+	* .hgtags:
+	Removed tag 0.05
+
+2008-01-17 15:21 -0500  djerius  <djerius@cfa.harvard.edu>  (14f8a6a44461)
+
+	* .hgtags:
+	Added tag 0.05 for changeset 4c9ce9315ca8
+
+2008-01-17 15:21 -0500  djerius  <djerius@cfa.harvard.edu>  (4c9ce9315ca8)
+
+	* ChangeLog, Changes, README, lib/App/Env.pm:
+	udpate for release
+
+2008-01-17 15:14 -0500  djerius  <djerius@cfa.harvard.edu>  (649b4e3e59e6)
 
 	* bin/appexec, lib/App/Env.pm:
 	added appexec

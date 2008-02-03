@@ -12,6 +12,7 @@ sub envs
 
     $cnt++;
 
+    warn( "Site2 App1 $cnt\n" ) if $ENV{APP_ENV_DEBUG};
     return { Site2_App1 => $cnt };
 }
 

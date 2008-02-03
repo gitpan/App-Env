@@ -1,5 +1,13 @@
 Revision history for Perl extension App::Env.
 
+0.06  Sun Feb  3 14:11:39 EST 2008
+        - fix for multi-app environments
+	- application environments must now be based upon the current
+	  environment
+	- cached application environments are not used in multi-app
+	  environments, nor will individual environments be cached in
+	  the course of creating a multi-app environment
+
 0.05  Thu Jan 17 15:15:38 EST 2008
         - improve(?) documentation
 	- add appexec program

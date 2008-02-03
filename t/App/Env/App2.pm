@@ -9,6 +9,7 @@ sub envs
 
     $cnt++;
 
+    warn( "App2 $cnt\n" ) if $ENV{APP_ENV_DEBUG};
     return { App2 => $cnt };
 }
 

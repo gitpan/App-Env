@@ -3,6 +3,7 @@ abstract: 'manage application specific environments'
 author:
   - 'Diab Jerius, <djerius@cpan.org>'
 build_requires:
+  Env::Path: 0
   Test::More: 0
 distribution_type: module
 generated_by: 'Module::Install version 0.68'
@@ -16,10 +17,10 @@ no_index:
     - inc
     - t
 requires:
-  Env::Path: 0
+  File::Basename: 0
   File::Temp: 0
   Getopt::Long: 2.24
   Params::Validate: 0
   Pod::Usage: 0
   Scalar::Util: 0
-version: 0.05
+version: 0.06
