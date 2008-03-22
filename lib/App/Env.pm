@@ -29,8 +29,12 @@ use UNIVERSAL qw( isa );
 use Carp;
 use Params::Validate qw(:all);
 
+# need to distinguish between a non-existent module
+# and one which has compile errors.
+use Module::Find qw( );
 
-our $VERSION = '0.06';
+
+our $VERSION = '0.07';
 
 use overload
   '%{}' => '_envhash',
@@ -38,10 +42,48 @@ use overload
   fallback => 1;
 
 
+my %existsModule;
+my %Modules;
+
+sub _loadModuleList
+{
+    %existsModule = ();
+
+    for my $path ( Module::Find::findallmod( 'App::Env' ) )
+    {
+        # greedy match picks up full part of path
+        my ( $base, $module ) = $path =~ /^(.*)::(.*)/;
+
+        $Modules{$base} ||= [];
+        push @{$Modules{$base}}, $module;
+
+        $existsModule{$path} = $path;
+    }
+
+    return;
+}
+
+
+sub _existsModule
+{
+    my ( $module ) = @_;
+
+    # (re)load cache if we can't find the module in the list
+    _loadModuleList
+      unless $existsModule{$module};
+
+    # really check
+    return $existsModule{$module};
+}
+
 # allow site specific site definition
 BEGIN {
-    eval 'use App::Env::Site'
-      unless exists $ENV{APP_ENV_SITE};
+
+    if ( ! exists $ENV{APP_ENV_SITE} && _existsModule('App::Env::Site') )
+    {
+        eval 'use App::Env::Site';
+        croak( "Error loading App::Env::Site: $@\n" ) if $@;
+    }
 }
 
 
@@ -134,9 +176,10 @@ sub _load_envs
     # are being loaded in one call.  Checking caching requires that we generate
     # a cacheid from the applications' cacheids.
 
-    # if import is called as import( [$app, \%opts], \%shared_opts ), this is
-    # equivalent to import( $app, { %shared_opts, %opts } ), but we still validate
-    # %shared_opts as SharedOptions, just to be precise.
+    # if import is called as import( [$app, \%opts], \%shared_opts ),
+    # this is equivalent to import( $app, { %shared_opts, %opts } ),
+    # but we still validate %shared_opts as SharedOptions, just to be
+    # precise.
 
     # if there's a single application passed as a scalar (rather than
     # an array containing the app name and options), treat @opts as
@@ -341,27 +384,81 @@ sub uncache
 	croak( "must specify App or CacheID options\n" )
 	  unless defined $opt{App};
 
-	delete $EnvCache{ _cacheid( _modulename( $opt{App}, $opt{Site} ), {} ) };
+        $opt{Site} ||= _App_Env_Site();
+
+        # don't use normal rules for Site specification as we're trying
+        # to delete a specific one.
+	delete $EnvCache{ _cacheid( _modulename( $opt{Site}, $opt{App} ), {} )};
     }
+
+    return;
+}
+
+sub _modulename
+{
+    return join( '::', 'App::Env', @_ );
 }
 
 
+# construct a module name based upon the current or requested site.
+# requires the module if found.  returns the module name if module is
+# found, false if not, die's if require fails
 
-# construct a module name based upon the current or requested
-# site.
-sub _modulename
+sub _require_module
 {
-    my ( $app, $usite ) = @_;
+    my ( $app, $usite, $loop, $app_opts ) = @_;
+
+    $app_opts ||= {};
+
+    $loop ||= 1;
+    die( "too many alias loops for $app\n" )
+      if $loop == 10;
+
+    my @sites = _App_Env_Site();
+    push @sites, $usite
+      if defined $usite && $usite ne '';
+
+    # check possible sites, in turn.
+    my ( $site ) = grep { _existsModule( _modulename( $_, $app ) ) }
+                         @sites;
+    my $module =
+      defined $site
+        ? _modulename( $site, $app )
+        : _existsModule( _modulename( $app ) );
 
 
-    my @site = (
-		exists $ENV{APP_ENV_SITE} && $ENV{APP_ENV_SITE} ne ''
-		                                    ? $ENV{APP_ENV_SITE}
-		: defined $usite && $usite ne ''    ? $usite
-		:                                     ()
-	       );
+    if ( defined $module )
+    {
+        eval "require $module"
+          or die $@;
 
-    return join('::', 'App::Env', @site, $app );
+        # see if this is an alias
+        if ( $module->can('alias') )
+        {
+            no strict 'refs';
+            ( $app, my $napp_opts ) = &{"${module}::alias"}();
+            @{$app_opts}{keys %$napp_opts} = @{$napp_opts}{keys %$napp_opts}
+              if $napp_opts;
+            return _require_module( $app, $usite, ++$loop, $app_opts );
+        }
+    }
+
+    else
+    {
+        return;
+    }
+
+    return ( $module, $app_opts );
+}
+
+# consolidate handling of APP_ENV_SITE environment variable
+
+sub _App_Env_Site {
+
+    return $ENV{APP_ENV_SITE}
+      if exists $ENV{APP_ENV_SITE} && $ENV{APP_ENV_SITE} ne '';
+
+    return;
 }
 
 sub _cacheid
@@ -377,10 +474,10 @@ sub _cacheid
 
 sub _exclude_param_check
 {
-    ! ref $_[0]
-      || 'ARRAY' eq ref $_[0]
-	|| 'Regexp' eq ref $_[0]
-	  || 'CODE' eq ref $_[0];
+         ! ref $_[0]
+      || 'ARRAY'  eq ref $_[0]
+      || 'Regexp' eq ref $_[0]
+      || 'CODE'   eq ref $_[0];
 }
 
 sub env     {
@@ -388,31 +485,39 @@ sub env     {
     my @opts = ( 'HASH' eq ref $_[-1] ? pop : {} );
 
     # mostly a duplicate of what's in str(). ick.
-    my %opt = 
+    my %opt =
       validate( @opts,
 	      { Exclude => { callbacks => { 'type' => \&_exclude_param_check },
 			     default => undef
-			   } } );
+			   },
+              } );
 
-    if ( @_ )
+    # Exclude is only allowed in scalar calling context where
+    # @_ is empty, has more than one element, or the first element
+    # is not a scalar.
+    die( "Cannot use Exclude in this calling context\n" )
+      if $opt{Exclude} && ( wantarray() || ( @_ == 1 && ! ref $_[0] ) );
+
+
+    my $include =  [ @_ ? @_ : qr/.*/ ];
+    my $env = $self->_envhash;
+
+    my @vars = $self->_filter_env( $include, $opt{Exclude} );
+
+    if ( wantarray() )
     {
-	croak( "Exclude option may be used only when requesting the full environment\n" )
-	  if defined $opt{Exclude};
-
-	if ( wantarray() )
-	{
-	    return  map { $self->_var('app')->{ENV}->{$_} } @_;
-	}
-	else
-	{
-	    return $self->_var('app')->{ENV}->{$_[0]};
-	}
+        return map { exists $env->{$_} ? $env->{$_} : undef } @vars;
+    }
+    elsif ( @_ == 1 && ! ref $_[0] )
+    {
+        return $env->{$vars[0]};
     }
     else
     {
-	return $self->_exclude( $opt{Exclude} );
+        my %env;
+        @env{@vars} = @{$self->_envhash}{@vars};
+        return \%env;
     }
-
 }
 
 
@@ -420,62 +525,93 @@ sub env     {
 sub str
 {
     my $self = shift;
+    my @opts = ( 'HASH' eq ref $_[-1] ? pop : {} );
 
     # validate type.  Params::Validate doesn't do Regexp, so
     # this is a bit messy.
-    my %opt = 
-      validate( @_,
+    my %opt =
+      validate( @opts,
 	      { Exclude => { callbacks => { 'type' => \&_exclude_param_check },
-			     default => [ 'TERMCAP' ]
-			   } } );
+			     optional => 1
+			   },
+              } );
 
-    my $env = $self->_exclude( $opt{Exclude} );
+    my $include =  [@_ ? @_ : qr/.*/];
 
+    if ( ! grep { $_ eq 'TERMCAP' } @$include )
+    {
+        $opt{Exclude} ||= [];
+        $opt{Exclude} = [ $opt{Exclude} ] unless 'ARRAY' eq ref $opt{Exclude};
+        push @{$opt{Exclude}}, 'TERMCAP';
+    }
+
+    my $env = $self->_envhash;
+    my @vars = grep { exists $env->{$_} }
+                    $self->_filter_env( $include, $opt{Exclude} );
     return join( ' ',
-		 map { "$_=" . _shell_escape($env->{$_}) } keys %$env
+		 map { "$_=" . _shell_escape($env->{$_}) } @vars
 	       );
 }
 
-# return a hashref with the specified variables excluded
-# this takes a list of scalars, coderefs, or regular expressions.
-sub _exclude
+# return a list of included variables, in the requested
+# order, based upon a list of include and exclude specs.
+# variable names  passed as plain strings are not checked
+# for existance in the environment.
+sub _filter_env
 {
-    my ( $self, $excluded ) = @_;
+    my ( $self, $included, $excluded ) = @_;
 
-    my %env = %{$self};
+    my @exclude = $self->_match_var( $excluded );
 
-    $excluded = [ $excluded ] unless 'ARRAY' eq ref $excluded;
+    my %exclude = map { $_ => 1 } @exclude;
+    return grep { ! $exclude{$_} } $self->_match_var( $included );
+}
 
-    for my $exclude ( @$excluded )
+# return a list of variables which matched the specifications.
+# this takes a list of scalars, coderefs, or regular expressions.
+# variable names  passed as plain strings are not checked
+# for existance in the environment.
+sub _match_var
+{
+    my ( $self, $match ) = @_;
+
+    my $env = $self->_envhash;
+
+    $match = [ $match ] unless 'ARRAY' eq ref $match;
+
+    my @keys;
+    for my $spec ( @$match )
     {
-	next unless defined $exclude;
+	next unless defined $spec;
 
-        my @delkeys;
-
-        if ( 'Regexp' eq ref $exclude )
+        if ( ! ref $spec )
         {
-            @delkeys = grep { /$exclude/ } keys %env;
+            # always return a plain name.  this allows
+            #   @values = $env->env( @names) to work.
+            push @keys, $spec;
         }
-        elsif ( 'CODE' eq ref $exclude )
+        elsif ( 'Regexp' eq ref $spec )
         {
-            @delkeys = grep { $exclude->($_, $env{$_}) } keys %env;
+            push @keys, grep { /$spec/ } keys %$env;
+        }
+        elsif ( 'CODE' eq ref $spec )
+        {
+            push @keys, grep { $spec->($_, $env->{$_}) } keys %$env;
         }
         else
         {
-            @delkeys = grep { $_ eq $exclude } keys %env;
+            die( "match specification is of unsupported type: ",
+                 ref $spec, "\n" );
         }
-
-        delete @env{@delkeys};
     }
 
-    return \%env;
+    return @keys;
 }
-
 
 
 my $MAGIC_CHARS;
 
-BEGIN {  ( $MAGIC_CHARS = q/\\\$"'!*{};()[]/ ) =~ s/(\W)/\\$1/g; }
+BEGIN {  ( $MAGIC_CHARS = q/\\\$"'!*{};()[]/ ) =~ s/(.)/\\$1/g; }
 
 sub _shell_escape
 {
@@ -544,6 +680,8 @@ sub exec
 }
 
 
+
+
 ###############################################
 
 package App::Env::_app;
@@ -574,7 +712,19 @@ sub new
     {
 	# make copy of options
 	$opt{opt} = { %{$opt{opt}} };
-	$opt{module}  = App::Env::_modulename( $opt{app}, $opt{opt}{Site} );
+
+	( $opt{module}, my $app_opts )
+          = eval { App::Env::_require_module( $opt{app}, $opt{opt}{Site} ) };
+        croak( "error loading application environment module for $opt{app}:\n", $@ )
+          if $@;
+
+        die( "application environment module for $opt{app} does not exist\n" )
+          unless defined $opt{module};
+
+        # merge possible alias AppOpts
+        $opt{opt}{AppOpts} ||= {};
+        $opt{opt}{AppOpts} = { %$app_opts, %{$opt{opt}{AppOpts}} };
+
 	$opt{cacheid} = defined $opt{opt}{CacheId}
 	                  ? $opt{opt}{CacheId}
 			  : App::Env::_cacheid( $opt{module}, $opt{opt} );
@@ -613,17 +763,18 @@ sub load {
     return $self->{ENV} if exists $self->{ENV};
 
     my $module = $self->{module};
-    eval "require $module";
-    croak( "error loading application environment module",
-	   " ($module) for $self->{app}:\n", $@ )
-      if $@;
 
     my $envs;
+    if ( $module->can('envs' ) )
     {
 	no strict 'refs';
 	$envs = eval { &{"${module}::envs"}( $self->{opt}{AppOpts} ) };
 	croak( "error in ${module}::envs: $@\n" )
 	  if $@;
+    }
+    else
+    {
+        croak( "$module does not have an 'envs' function\n" );
     }
 
     # make copy of environment
@@ -760,7 +911,6 @@ a means for loading an alternate application module.  It does this
 by loading the first existant module from the following set of module names:
 
   App::Env::$SITE::$app
-  App::Env::$SITE::$app
   App::Env::$app
 
 The C<$SITE> variable is taken from the environment variable
@@ -801,6 +951,27 @@ B<App::Env::Site> module to transparenlty automate things:
 
   1;
 
+=head2 Application Aliases
+
+If application environments should be available under alternate names
+(primarily for use B<appexec>), a module should be created for each alias
+with the single class method B<alias> which should return the name of
+the original application.  For example, to make C<App3> be an alias
+for C<App1> create the following F<App3.pm> module:
+
+  package App::Env::App3;
+  sub alias { return 'App1' };
+  1;
+
+The aliased environment can provide presets for B<AppOpts> by returning
+a hash as well as the application name:
+
+  package App::Env::ciao34;
+  sub alias { return 'CIAO', { Version => 3.4 } };
+  1;
+
+These will be merged with any C<AppOpts> passed in via B<import()>, with
+the latter taking precedence.
 
 =head1 INTERFACE
 
@@ -889,10 +1060,14 @@ to identify the merged environment.
   App::Env::uncache( CacheID => $cacheid )
 
 
-Delete the cache entry for the given application.  It is currently
-I<not> possible to use this interface to explicitly uncache
-multi-application environments if they have not been given a unique
-cache id.  It is possible using B<App::Env> objects.
+Delete the cache entry for the given application.  If C<Site> is not
+specified, the site is determined as specified in </Site Specific
+Contexts>.
+
+It is currently I<not> possible to use this interface to
+explicitly uncache multi-application environments if they have not
+been given a unique cache id.  It is possible using B<App::Env>
+objects.
 
 The available options are:
 
@@ -971,35 +1146,75 @@ environment is being cached, delete the cache.
 =item env
 
   # return a hashref of the entire environment (similar to %{$env})
-  $env_hashref = $env->env( \%options );
+  $hashref = $env->env( );
 
   # return the value of a given variable in the environment
-  $value = $env->env('variable')
+  $value = $env->env( $variable_name )
 
   # return an array of values of particular variables.
-  @env_vals = $env->env( @variable_names );
+  # names should be strings
+  @values = $env->env( @variable_names );
 
-Return either the entire environment as a hashref (similar to simply
-using the %{} operator) or return the value of one or more variables
-in the environment.  When called in a scalar context it will return
-the value of the first variable passed to it.
+  # match variable names and return a hashref
+  $hashref = $env->env( @match_specifications );
 
-The available options are:
+  # exclude specific variables
+  $hashref = $env->env( { Exclude => $match_spec   } );
+  $hashref = $env->env( { Exclude => \@match_specs } );
+  $hashref = $env->env( @match_specs, { Exclude => $match_spec   } );
+  $hashref = $env->env( @match_specs, { Exclude => \@match_specs } );
+
+Return all or parts of the environment.  What is returned
+depends upon the type of argument and which of the
+following contexts matches:
 
 =over
 
-=item B<Exclude> I<array> or I<scalar>
+=item 0
 
-This specifies variables to exclude from the returned environment.  It
-may be either a single value or an array of values.
+If called with no arguments (or just an B<Exclude> option,
+as discussed below) return a hashref containing the environment.
 
-A value may be a string (for an exact match of a variable name), a regular
-expression created with the B<qr> operator, or a subroutine
-reference.  The subroutine will be passed two arguments, the variable
-name and its value, and should return true if the variable should be
-excluded, false otherwise.
+=item 1
+
+If called in a scalar context and passed a single variable name
+(which must be a string) return the value for that variable,
+or I<undef> if it is not in the environment.
+
+=item 2
+
+If called in a list context and passed a list of variable names
+(which must be strings) return an array of values for those variables
+(I<undef> for those not in the environment).
+
+=item 3
+
+If called in a scalar context and passed one or more I<match
+specifications>, return a hashref containing the subset
+of the environment which matches.  The C<Exclude> option (see below)
+may be present.
+
+A I<match specification> may be a string, (for an exact match of a
+variable name), a regular expression created with the B<qr> operator,
+or a subroutine reference.  The subroutine will be passed two
+arguments, the variable name and its value, and should return true if
+the variable should be excluded, false otherwise.
+
+To avoid mistaking this context for context 1 if the I<match specification>
+is a single string, enclose it in an array, e.g.
+
+   # this is context 1
+   $value = $env->env( $variable_name );
+
+   # this is context 3
+   $hash = $env->env( [ $variable_name ] );
 
 =back
+
+Variable names may be excluded from the list by passing a hash with
+the key C<Exclude> as the last argument (valid only in contexts 0 and
+3).  The value is either a scalar or an arrayref composed of match
+specifications (as an arrayref) as described in context 3.
 
 =item module
 
@@ -1011,30 +1226,24 @@ concatenated, seperated by the C<$;> (subscript separator) character.
 
 =item str
 
-  $envstr = $env->str( %options );
+  $envstr = $env->str( @match_specifications, \%options );
 
 This function returns a string which may be used with the *NIX B<env>
 command to set the environment.  The string contains space separated
-C<var=value> pairs, with shell magic characters escaped.  The available
-options are:
+C<var=value> pairs, with shell magic characters escaped.
 
-=over
+The environment may be pared down by passing I<match specifications>
+and an C<Exclude> option; see the documentation for the B<env> method,
+context 3, for more information.
 
-=item B<Exclude> I<array> or I<scalar>
+Because the B<TERMCAP> environment variable is often riddled with
+escape characters, which are not always handled well by shells, the
+B<TERMCAP> variable is I<always> excluded unless it is explicitly
+included via an exact variable name match specification. For example,
 
-This specifies variables to exclude from the returned environment.  It
-may be either a single value or an array of values.
+  $envstr = $env->str( qr/.*/, 'TERMCAP );
 
-A value may be a string (for an exact match of a variable name), a regular
-expression created with the B<qr> operator, or a subroutine
-reference.  The subroutine will be passed two arguments, the variable
-name and its value, and should return true if the variable should be
-excluded, false otherwise.
-
-It defaults to C<TERMCAP> (a variable which is usually large and
-unnecessary).
-
-=back
+is the only means of getting all of the environment returned.
 
 =item system
 
@@ -1074,6 +1283,11 @@ current environment, then simply
 
   use App::Env qw( PackageName );
 
+=item A single application with options
+
+If the B<CIAO> environment module provides a C<Version> option:
+
+  use App::Env ( 'CIAO', { AppOpts => { Version => 3.4 } } );
 
 =item Two compatible applications
 
@@ -1122,6 +1336,8 @@ into play:
 This hopefully won't overfill the shell's command buffer. If you need
 to specify only parts of the environment, use the B<str> method to
 explicitly create the arguments to the B<env> command.
+
+=back
 
 =head1 BUGS AND LIMITATIONS
 

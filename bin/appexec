@@ -6,10 +6,11 @@ use warnings;
 use Getopt::Long qw( :config require_order );
 
 use File::Basename;
+use File::Spec::Functions qw( file_name_is_absolute );
 use Env::Path;
 use App::Env;
 
-our $VERSION = '0.05';
+our $VERSION = '0.07';
 our $prog = basename( $0, '.pl' );
 
 # program options; see parse_args();
@@ -35,7 +36,6 @@ sub main
 
     do { print "$prog $VERSION\n"; return }
       if $opt{version};
-
 
     eval { App::Env::import( $opt{env},
                            {
@@ -82,8 +82,10 @@ sub main
 
     if ( @ARGV )
     {
-	die( "unable to find program to execute ($ARGV[0]) in path\n" )
-	  unless Env::Path->PATH->Whence($ARGV[0]);
+	die( "$ARGV[0] does not exist, is not executable, or is not in PATH\n" )
+	  unless
+            ( file_name_is_absolute($ARGV[0]) && -e $ARGV[0] )
+              || Env::Path->PATH->Whence($ARGV[0]);
 
 	exec @ARGV
 	  or die( "can't exec $ARGV[0]: not in path?\n" );

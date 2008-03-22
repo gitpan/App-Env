@@ -1,4 +1,4 @@
-use Test::More tests => 22;
+use Test::More tests => 24;
 
 use lib 't';
 
@@ -20,6 +20,19 @@ is( $ENV{Site1_App1}, 2, "import func 2, deleted cache" );
 
 App::Env::import( 'App1' );
 is( $ENV{Site1_App1}, 2, "import func 2, cache on" );
+
+# check that correct site is uncached
+{
+  local %ENV = %ENV;
+  $ENV{APP_ENV_SITE} = 'Site2';
+
+  App::Env::import( 'App1' );
+  is( $ENV{Site2_App1}, 1, "import site2" );
+
+  App::Env::uncache( App => 'App1' );
+}
+App::Env::import( 'App1' );
+is( $ENV{Site1_App1}, 2, "cache site1 after uncache of site 2" );
 
 #############################################################
 

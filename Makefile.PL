@@ -4,11 +4,11 @@ use inc::Module::Install;
 
 name 'App-Env';
 
-all_from 'lib/App/Env.pm';
+perl_version '5.008000';
 license 'gpl3';
+all_from 'lib/App/Env.pm';
 
 build_requires 'Test::More';
-build_requires 'Env::Path';
 
 requires 'Getopt::Long' => 2.24;
 requires 'Scalar::Util';
@@ -16,6 +16,9 @@ requires 'Params::Validate';
 requires 'Pod::Usage';
 requires 'File::Temp';
 requires 'File::Basename';
+requires 'Module::Find';
+requires 'Env::Path';
+requires 'File::Spec::Functions';
 
 install_script 'bin/appexec';
 

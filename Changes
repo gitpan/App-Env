@@ -1,5 +1,19 @@
 Revision history for Perl extension App::Env.
 
+0.07  Sat Mar 22 13:19:29 EDT 2008
+        - application environments may now have aliases, which
+	  can preset options
+	- site search was not done exactly according to specs
+	- improved method for searching for environment modules to
+	  distinguish between non-existant modules and compilation errors
+	- env() (and now str() as well) can specify variables to
+	  include in a more flexible fashion.  the returned value is
+	  more flexible (more context dependent) and excruciatingly
+	  documented.
+	- more restrictive str() generation of TERMCAP to make
+	  it easier to exclude variables without needing to specify TERMCAP
+ 
+
 0.06  Sun Feb  3 14:11:39 EST 2008
         - fix for multi-app environments
 	- application environments must now be based upon the current

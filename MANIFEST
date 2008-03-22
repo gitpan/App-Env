@@ -21,13 +21,17 @@ MANIFEST			This list of files
 MANIFEST.SKIP
 META.yml
 README
+t/alias.t
 t/App-Env.t
 t/App/Env/App1.pm
 t/App/Env/App2.pm
 t/App/Env/Site.pm
 t/App/Env/Site1/App1.pm
 t/App/Env/Site1/App2.pm
+t/App/Env/Site1/App3.pm
+t/App/Env/Site1/App4.pm
 t/App/Env/Site2/App1.pm
+t/appexec.t
 t/badmodule.t
 t/cache.t
 t/env.t

@@ -1,3 +1,5 @@
+#!perl
+
 use Test::More;
 
 use strict;
@@ -11,7 +13,7 @@ use App::Env;
 
 if ( Env::Path->PATH->Whence( 'env' ) )
 {
-    plan tests => 5;
+    plan tests => 7;
 }
 else
 {
@@ -22,7 +24,9 @@ my $app1 = App::Env->new( 'App1' );
 
 my ( $envstr, $output );
 
-$envstr = $app1->str;
+# limit env string so it doesn't overflow shell buffer on some test
+# systems
+$envstr = $app1->str( qr/Site1_App1.*/ );
 
 $output = qx{env $envstr $^X -e 'print \$ENV{Site1_App1}'};
 die "error running env: $@\n" if $@;
@@ -33,7 +37,7 @@ is( $output, '1', 'envstr' );
 sub test_exclude {
     my ( $exclude, $label ) = @_;
 
-    my $envstr = $app1->str( Exclude => $exclude );
+    my $envstr = $app1->str( { Exclude => $exclude } );
 
     my $output = qx{env $envstr $^X -e 'print \$ENV{Site1_App1}'};
 
@@ -44,10 +48,20 @@ sub test_exclude {
 }
 
 # test exclusion
-test_exclude( qr/Site1_.*/, 'envstr; exclude regexp' );
-test_exclude( 'Site1_App1', 'envstr; exclude scalar' );
-test_exclude( [ 'Site1_App1' ], 'envstr; exclude array' );
+test_exclude( qr/Site1_.*/, 'exclude: regexp' );
+test_exclude( 'Site1_App1', 'exclude: scalar' );
+test_exclude( [ 'Site1_App1' ], 'exclude: array' );
 
 test_exclude( sub { my( $var, $val ) = @_;
 		    return $var eq 'Site1_App1' ? 1 : 0 },
-	      'envstr; exclude code' );
+	      'exclude: code' );
+
+
+# test for TERMCAP handling
+SKIP: {
+    skip "no TERMCAP in environment; can't test for it", 2
+      unless exists $ENV{TERMCAP};
+
+    ok ( $app1->str( ) !~ /\bTERMCAP\b/, 'TERMCAP handling' );
+    ok ( $app1->str( 'TERMCAP' ) =~ /\bTERMCAP\b/, 'TERMCAP handling' );
+}

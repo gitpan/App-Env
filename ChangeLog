@@ -1,8 +1,143 @@
-2008-02-03  Diab Jerius  <djerius@cfa.harvard.edu>
+2008-03-22  Diab Jerius  <djerius@cfa.harvard.edu>
 
-	Tag 0.06
+	Tag 0.07
 
-2008-02-03 14:10 -0500  djerius  <djerius@cfa.harvard.edu>  (63d9df4e0bbe [tip])
+2008-03-22 18:07 -0400  djerius  <djerius@cfa.harvard.edu>  (6981a6673e36 [tip])
+
+	* t/envstr.t:
+	improved TERMCAP testing
+
+2008-03-22 18:02 -0400  djerius  <djerius@cfa.harvard.edu>  (2257fa1aa1fa)
+
+	* lib/App/Env.pm, t/envstr.t:
+	explicit request required for str() to output TERMCAP, to simplify
+	Excludes
+
+2008-03-22 17:21 -0400  djerius  <djerius@cfa.harvard.edu>  (456572d64437)
+
+	* ChangeLog, Changes, bin/appexec, lib/App/Env.pm:
+	update for release
+
+2008-03-22 17:18 -0400  djerius  <djerius@cfa.harvard.edu>  (91e9e88e4e2d)
+
+	* lib/App/Env.pm, t/env.t, t/envstr.t:
+	merged env()/str() Include behavior into list of vars; str now takes
+	variable names, normalized return behavior of env() in list/scalar
+	context.
+
+	env() & str() variable name, Include & Exclude behavior was too
+	complex. the Include option was partially duplicating the list of
+	names at the front of the argument list. The Include option was
+	removed and the list of variable names was upgraded to a list of
+	match specifications. str() now has the same argument signature as
+	env().
+
+	The return from env() in different contexts was too inflexible (and
+	maybe a bit inconsistent). It is now deterministic and documented
+	(and perhaps too flexible).
+
+2008-03-22 13:17 -0400  djerius  <djerius@cfa.harvard.edu>  (b84150d5cf3e)
+
+	* t/App/Env/Site1/App3.pm, t/App/Env/Site1/App4.pm:
+	forgot to add alias test env modules
+
+2008-03-22 13:03 -0400  djerius  <djerius@cfa.harvard.edu>  (0f05405c3b60)
+
+	* lib/App/Env.pm, lib/App/Env/Example.pm, t/alias.t:
+	allow aliases to preset AppOpts
+
+2008-03-22 11:57 -0400  djerius  <djerius@cfa.harvard.edu>  (518b4be49ba5)
+
+	* t/appexec.t:
+	fix compilation warning
+
+2008-03-22 11:50 -0400  djerius  <djerius@cfa.harvard.edu>  (ac4dd95232a8)
+
+	* Makefile.PL:
+	add more dependencies, cleanups, use Module::Install to check Perl
+	version
+
+2008-03-22 11:50 -0400  djerius  <djerius@cfa.harvard.edu>  (e9d63554448f)
+
+	* t/appexec.t:
+	new appexec test; also tests alias
+
+2008-03-22 11:48 -0400  djerius  <djerius@cfa.harvard.edu>  (968e8b1f61ea)
+
+	* bin/appexec:
+	appexec could not handle commands with an absolute path
+
+2008-03-22 11:25 -0400  djerius  <djerius@cfa.harvard.edu>  (c67242602649)
+
+	* Makefile.PL:
+	require Perl > 5.8.0; won't work on earlier versions
+
+2008-03-22 10:24 -0400  djerius  <djerius@cfa.harvard.edu>  (0d69fd7379d0)
+
+	* Makefile.PL:
+	update module list
+
+2008-03-22 08:29 -0400  djerius  <djerius@cfa.harvard.edu>  (5d8f5a2a90b4)
+
+	* t/alias.t:
+	test aliasing functionality
+
+2008-03-22 08:28 -0400  djerius  <djerius@cfa.harvard.edu>  (b69ece6df73e)
+
+	* lib/App/Env.pm:
+	make site search follow specs. introduce aliases
+
+	a rather too big patch:
+
+	- site hiearchy traversals weren't quite right, especially for
+	uncaching
+
+	- added "alias" option, which allows a module to masquerade as
+	another.
+
+	- use Module::Find to distinguish between non-existant app modules
+	and app modules with compile time errors.
+
+	- various bits of code cleanup
+
+2008-03-22 08:12 -0400  djerius  <djerius@cfa.harvard.edu>  (84041e9437a6)
+
+	* t/envstr.t:
+	limit envstr so shell isn't overflowed on some CPAN test systems
+
+2008-03-22 08:09 -0400  djerius  <djerius@cfa.harvard.edu>  (9850395e9445)
+
+	* lib/App/Env.pm, t/App/Env/Site1/App1.pm, t/env.t:
+	add Include functionality to env & envstr to include particular
+	variables
+
+2008-03-22 08:01 -0400  djerius  <djerius@cfa.harvard.edu>  (03ee877b4a63)
+
+	* t/cache.t:
+	ensure envs for correct site are uncached
+
+2008-03-22 07:11 -0400  djerius  <djerius@cfa.harvard.edu>  (39c9e071c203)
+
+	* lib/App/Env/Example.pm:
+	introduce the concept of Pristine environments
+
+2008-03-21 22:56 -0400  djerius  <djerius@cfa.harvard.edu>  (d6fa755a3300)
+
+	* t/env.t, t/envstr.t:
+	syntax bug in test resulted in test failure, but test was expected
+	to fail.
+
+2008-02-03 14:15 -0500  djerius  <djerius@cfa.harvard.edu>  (b5853610733a)
+
+	* .hgtags:
+	Added tag 0.06 for changeset 890de36e3052
+
+2008-02-03 14:13 -0500  djerius  <djerius@cfa.harvard.edu>  (890de36e3052 [0.06])
+
+	* ChangeLog, Changes:
+	update for release
+
+2008-02-03 14:10 -0500  djerius  <djerius@cfa.harvard.edu>  (63d9df4e0bbe)
 
 	* Makefile.PL:
 	fix up dependencies
