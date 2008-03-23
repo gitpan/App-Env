@@ -1,4 +1,19 @@
-2008-03-22 22:03 -0400  djerius  <djerius@cfa.harvard.edu>  (5be33197bec5 [tip])
+2008-03-22 22:44 -0400  djerius  <djerius@cfa.harvard.edu>  (c95c70b57384 [tip])
+
+	* lib/App/Env.pm, t/alias.t:
+	lowercase aliasing failed if Site was not set.
+
+2008-03-22 22:09 -0400  djerius  <djerius@cfa.harvard.edu>  (3983fbc2fa75)
+
+	* .hgtags:
+	Added tag 0.08 for changeset cca292f76ae2
+
+2008-03-22 22:09 -0400  djerius  <djerius@cfa.harvard.edu>  (cca292f76ae2 [0.08])
+
+	* ChangeLog, Changes, bin/appexec, lib/App/Env.pm:
+	update for release
+
+2008-03-22 22:03 -0400  djerius  <djerius@cfa.harvard.edu>  (5be33197bec5)
 
 	* README, lib/App/Env.pm, t/alias.t:
 	application module search is no longer sensitive to the case of the

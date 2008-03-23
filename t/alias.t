@@ -1,5 +1,5 @@
 #!perl
-use Test::More tests => 8;
+use Test::More tests => 9;
 
 use lib 't';
 
@@ -51,4 +51,14 @@ BEGIN { use_ok('App::Env') };
     # import lowercased alias
     App::Env::import( 'app3', { Force => 1 } );
     is( $ENV{Site1_App1}, 5, "import lower case alias" );
+}
+
+{
+    local %ENV = %ENV;
+
+    # try this with Site ignored
+    # import lowercased alias
+    delete $ENV{APP_ENV_SITE};
+    App::Env::import( 'app1', { Force => 1 } );
+    is( $ENV{App1}, 1, "import lower case alias" );
 }

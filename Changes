@@ -1,5 +1,8 @@
 Revision history for Perl extension App::Env.
 
+0.09  Sat Mar 22 22:44:32 EDT 2008
+        - lowercase aliasing failed if Site was not set.
+
 0.08  Sat Mar 22 22:03:47 EDT 2008
         - application module search is no longer sensitive to the case
           of the application name

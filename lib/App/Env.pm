@@ -34,7 +34,7 @@ use Params::Validate qw(:all);
 use Module::Find qw( );
 
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 use overload
   '%{}' => '_envhash',
@@ -424,7 +424,7 @@ sub _require_module
     my ( $module ) =
       grep { defined $_ }
         ( map { _existsModule( _modulename( $_, $app ) ) } @sites ),
-          _modulename( $app );
+          _existsModule( _modulename( $app ) );
 
     if ( defined $module )
     {
