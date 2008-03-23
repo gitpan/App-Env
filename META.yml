@@ -26,4 +26,4 @@ requires:
   Pod::Usage: 0
   Scalar::Util: 0
   perl: 5.8.0
-version: 0.07
+version: 0.08

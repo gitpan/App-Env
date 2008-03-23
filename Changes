@@ -1,5 +1,9 @@
 Revision history for Perl extension App::Env.
 
+0.08  Sat Mar 22 22:03:47 EDT 2008
+        - application module search is no longer sensitive to the case
+          of the application name
+
 0.07  Sat Mar 22 13:19:29 EDT 2008
         - application environments may now have aliases, which
 	  can preset options

@@ -1,5 +1,5 @@
 #!perl
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 use lib 't';
 
@@ -10,7 +10,7 @@ BEGIN { use_ok('App::Env') };
 {
     local %ENV = %ENV;
 
-    # import alias.  Site1 App3 is an alias for Site1 App2
+    # import alias.  Site1 App3 is an alias for Site1 App1
     App::Env::import( 'App3' );
     is( $ENV{Site1_App1}, 1, "import alias" );
 }
@@ -42,4 +42,13 @@ BEGIN { use_ok('App::Env') };
     App::Env::import( 'App4', { Force => 1, AppOpts => { Alias => 'None' } } );
     is( $ENV{Site1_App1}, 4, "import nested alias" );
     is( $ENV{Alias}, 'None', "alias w/ overridden AppOpts" );
+}
+
+
+{
+    local %ENV = %ENV;
+
+    # import lowercased alias
+    App::Env::import( 'app3', { Force => 1 } );
+    is( $ENV{Site1_App1}, 5, "import lower case alias" );
 }

@@ -1,6 +1,6 @@
 # --8<--8<--8<--8<--
 #
-# Copyright (C) 2007 Smithsonian Astrophysical Observatory
+# Copyright (C) 2007-2008 Smithsonian Astrophysical Observatory
 #
 # This file is part of App::Env
 #
@@ -34,7 +34,7 @@ use Params::Validate qw(:all);
 use Module::Find qw( );
 
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use overload
   '%{}' => '_envhash',
@@ -43,7 +43,6 @@ use overload
 
 
 my %existsModule;
-my %Modules;
 
 sub _loadModuleList
 {
@@ -52,12 +51,10 @@ sub _loadModuleList
     for my $path ( Module::Find::findallmod( 'App::Env' ) )
     {
         # greedy match picks up full part of path
-        my ( $base, $module ) = $path =~ /^(.*)::(.*)/;
+        my ( $base, $app ) = $path =~ /^(.*)::(.*)/;
 
-        $Modules{$base} ||= [];
-        push @{$Modules{$base}}, $module;
-
-        $existsModule{$path} = $path;
+        # store lowercased module
+        $existsModule{$base . '::' . lc $app} = $path;
     }
 
     return;
@@ -66,14 +63,19 @@ sub _loadModuleList
 
 sub _existsModule
 {
-    my ( $module ) = @_;
+    my ( $path ) = @_;
+
+    # reconstruct path with lowercased application name.
+    # greedy match picks up full part of path
+    my ( $base, $app ) = $path =~ /^(.*)::(.*)/;
+    $path = $base . '::' . lc $app;
 
     # (re)load cache if we can't find the module in the list
     _loadModuleList
-      unless $existsModule{$module};
+      unless $existsModule{$path};
 
     # really check
-    return $existsModule{$module};
+    return $existsModule{$path};
 }
 
 # allow site specific site definition
@@ -110,11 +112,11 @@ our %EnvCache;
 # contexts:
 #
 #    * as a class method, i.e.
-#	use App:Env qw( package )
-#	App:Env->import( $package )
+#	use App:Env qw( application )
+#	App:Env->import( $application )
 #
 #    * as a class function (just so as not to confuse folks
-#       App::Env::import( $package )
+#       App::Env::import( $application )
 #
 #    * as an object method
 #       $env->import
@@ -190,7 +192,7 @@ sub _load_envs
 			       ? \%ApplicationOptions
 			       : \%SharedOptions );
 
-    # iterate through the packages to ensure that any package specific
+    # iterate through the applications to ensure that any application specific
     # options are valid and to form a basis for a multi-application
     # cacheid to check for cacheing.
     my @cacheids;
@@ -199,7 +201,7 @@ sub _load_envs
     {
 	my $App;
 
-	# initialize the package specific opts from the shared opts
+	# initialize the application specific opts from the shared opts
 	my %app_opt = %opts;
 
         # special filtering of options if this is part of a multi-app
@@ -222,7 +224,7 @@ sub _load_envs
 	if ( 'ARRAY' eq ref($app) )
 	{
 	    ( $app, my $opts ) = @$app;
-	    croak( "$app: package options must be a hashref\n" )
+	    croak( "$app: application options must be a hashref\n" )
 	      unless 'HASH' eq ref $opts;
 
 	    %app_opt = ( %app_opt, %$opts );
@@ -233,7 +235,7 @@ sub _load_envs
                 {
                   if ( exists $app_opt{$iopt})
                   {
-                      croak( "$app: do not specify the $iopt option for individual packages in a merge\n" );
+                      croak( "$app: do not specify the $iopt option for individual applications in a merge\n" );
                       delete $app_opt{$iopt};
                   }
               }
@@ -248,7 +250,7 @@ sub _load_envs
             $app_opt{Cache} = 0;
         }
 
-	# validate possible package options and get default
+	# validate possible application options and get default
 	# values. Params::Validate wants a real array
 	my ( @opts ) = %app_opt;
 
@@ -419,13 +421,10 @@ sub _require_module
       if defined $usite && $usite ne '';
 
     # check possible sites, in turn.
-    my ( $site ) = grep { _existsModule( _modulename( $_, $app ) ) }
-                         @sites;
-    my $module =
-      defined $site
-        ? _modulename( $site, $app )
-        : _existsModule( _modulename( $app ) );
-
+    my ( $module ) =
+      grep { defined $_ }
+        ( map { _existsModule( _modulename( $_, $app ) ) } @sites ),
+          _modulename( $app );
 
     if ( defined $module )
     {
@@ -814,16 +813,16 @@ App::Env - manage application specific environments
 
 =head1 SYNOPSIS
 
-  # import environment from package1 then package2 into current
+  # import environment from application1 then application2 into current
   # environment
-  use App::Env ( $package1, $package2, \%opts );
+  use App::Env ( $application1, $application2, \%opts );
 
   # import an environment at your leisure
   use App::Env;
-  App::Env::import( $package, \%opts );
+  App::Env::import( $application, \%opts );
 
   # retrieve an environment but don't import it
-  $env = App::Env->new( $package, \%opts );
+  $env = App::Env->new( $application, \%opts );
 
   # execute a command in that environment; just as a convenience
   $env->system( $command );
@@ -834,10 +833,10 @@ App::Env - manage application specific environments
   # oh bother, just import the environment
   $env->import;
 
-  # cache this environment as the default for $package
+  # cache this environment as the default for $application
   $env->cache( 1 );
 
-  # uncache this environment if it is the default for $package
+  # uncache this environment if it is the default for $application
   $env->cache( 0 );
 
   # generate a string compatible with the *NIX env command
@@ -895,20 +894,46 @@ environment, rather than the new environment.  To avoid this, use the
 B<CacheID> option to explicitly specify a unique key for environments
 if this will be a problem.
 
-If multiple packages are loaded via a single call to B<import> or
-B<new> the packages will be loaded incremently in the order specified.
-In order to ensure a properly merged environment the packages will be
-loaded freshly (any caches will be ignored) and the merged environment
-will be cached.  The cache id will by default be generated from all of
-the names of the environment modules invoked; this can be overridden
-using the B<CacheID> option.
+If multiple applications are loaded via a single call to B<import> or
+B<new> the applications will be loaded incremently in the order
+specified.  In order to ensure a properly merged environment the
+applications will be loaded freshly (any caches will be ignored) and
+the merged environment will be cached.  The cache id will by default
+be generated from all of the names of the environment modules invoked;
+this can be overridden using the B<CacheID> option.
+
+=head2 Application Aliases
+
+B<App::Env> performs a case-insensitive search for application
+modules.  For example, if the application module is named
+B<App::Env::CIAO>, a request for C<ciao> will resolve to it.
+
+Explicit aliases are also possible. A module should be created for
+each alias with the single class method B<alias> which should return
+the name of the original application.  For example, to make C<App3> be
+an alias for C<App1> create the following F<App3.pm> module:
+
+  package App::Env::App3;
+  sub alias { return 'App1' };
+  1;
+
+The aliased environment can provide presets for B<AppOpts> by returning
+a hash as well as the application name:
+
+  package App::Env::ciao34;
+  sub alias { return 'CIAO', { Version => 3.4 } };
+  1;
+
+These will be merged with any C<AppOpts> passed in via B<import()>, with
+the latter taking precedence.
 
 =head2 Site Specific Contexts
 
 In some situations an application's environment will depend upon which
-host or network it is executed on.  In such instances B<App::Env> provides
-a means for loading an alternate application module.  It does this
-by loading the first existant module from the following set of module names:
+host or network it is executed on.  In such instances B<App::Env>
+provides a means for loading an alternate application module.  It does
+this by loading the first existant module from the following set of
+module names:
 
   App::Env::$SITE::$app
   App::Env::$app
@@ -951,27 +976,6 @@ B<App::Env::Site> module to transparenlty automate things:
 
   1;
 
-=head2 Application Aliases
-
-If application environments should be available under alternate names
-(primarily for use B<appexec>), a module should be created for each alias
-with the single class method B<alias> which should return the name of
-the original application.  For example, to make C<App3> be an alias
-for C<App1> create the following F<App3.pm> module:
-
-  package App::Env::App3;
-  sub alias { return 'App1' };
-  1;
-
-The aliased environment can provide presets for B<AppOpts> by returning
-a hash as well as the application name:
-
-  package App::Env::ciao34;
-  sub alias { return 'CIAO', { Version => 3.4 } };
-  1;
-
-These will be merged with any C<AppOpts> passed in via B<import()>, with
-the latter taking precedence.
 
 =head1 INTERFACE
 
@@ -986,7 +990,7 @@ manipulating multiple separate environments.
 =head2 Using B<App::Env> without objects
 
 Application environments may be imported into the current environment
-either when loading B<App::Env> or via the B<APP::Env::import()>
+either when loading B<App::Env> or via the B<App::Env::import()>
 function.
 
 =over
@@ -999,7 +1003,7 @@ function.
   App::Env::import( $application, \%options );
   App::Env::import( @applications, \%shared_options );
 
-Import the specified applications.
+Import the specified applications.  
 
 Options may be applied to specific applications by grouping
 application names and option hashes in arrays:
@@ -1049,7 +1053,7 @@ multiple environments are loaded the I<combination> is also cached.
 A unique name for the environment. The default cache key doesn't take
 into account anything in B<AppOpts>. See L</Caching> for more information.
 
-When used as a shared option for multiple packages, this will be used
+When used as a shared option for multiple applications, this will be used
 to identify the merged environment.
 
 =back
@@ -1281,7 +1285,7 @@ command in the environment defined by B<$env> and returns its
 This is the simplest case.  If you don't care if you "pollute" the
 current environment, then simply
 
-  use App::Env qw( PackageName );
+  use App::Env qw( ApplicationName );
 
 =item A single application with options
 
@@ -1294,12 +1298,12 @@ If the B<CIAO> environment module provides a C<Version> option:
 If two applications can share an environment, and you don't mind
 changing the current environment;
 
-  use App::Env qw( Package1 Package2 );
+  use App::Env qw( Application1 Application2 );
 
 If you need to preserve the environment you need to be a little more
 circumspect.
 
-  $env = App::Env->new( qw( Package1 Package 2 ) );
+  $env = App::Env->new( qw( Application1 Application 2 ) );
   $env->system( $command1, @args );
   $env->system( $command2, @args );
 
@@ -1321,8 +1325,8 @@ if you prefer not to use the B<system> method.
 If two applications can't share the environment, you'll need to
 load them seperately:
 
-  $env1 = App::Env->new( 'Package1' );
-  $env2 = App::Env->new( 'Package2' );
+  $env1 = App::Env->new( 'Application1' );
+  $env2 = App::Env->new( 'Application2' );
 
   $env1->system( $command1 );
   $env2->system( $command2 );
@@ -1358,7 +1362,7 @@ Diab Jerius, E<lt>djerius@cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2007 Smithsonian Astrophysical Observatory
+Copyright 2007-2008 Smithsonian Astrophysical Observatory
 
 This software is released under the GNU General Public License.  You
 may find a copy at

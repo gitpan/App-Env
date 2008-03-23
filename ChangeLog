@@ -1,8 +1,29 @@
-2008-03-22  Diab Jerius  <djerius@cfa.harvard.edu>
+2008-03-22 22:03 -0400  djerius  <djerius@cfa.harvard.edu>  (5be33197bec5 [tip])
 
-	Tag 0.07
+	* README, lib/App/Env.pm, t/alias.t:
+	application module search is no longer sensitive to the case of the
+	application name
 
-2008-03-22 18:07 -0400  djerius  <djerius@cfa.harvard.edu>  (6981a6673e36 [tip])
+	- removed confusing references to package instead of application in
+	docs
+	- updated copyright date
+
+2008-03-22 18:14 -0400  djerius  <djerius@cfa.harvard.edu>  (37e17fd4fe62)
+
+	* .hgtags:
+	Added tag 0.07 for changeset bdfd9f1ef7e4
+
+2008-03-22 18:14 -0400  djerius  <djerius@cfa.harvard.edu>  (bdfd9f1ef7e4 [0.07])
+
+	* t/envstr.t:
+	update TERMCAP test; not all platforms have it!
+
+2008-03-22 18:08 -0400  djerius  <djerius@cfa.harvard.edu>  (ef3b0e4d7b98)
+
+	* ChangeLog, Changes:
+	update for release
+
+2008-03-22 18:07 -0400  djerius  <djerius@cfa.harvard.edu>  (6981a6673e36)
 
 	* t/envstr.t:
 	improved TERMCAP testing
