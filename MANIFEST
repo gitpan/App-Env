@@ -10,7 +10,6 @@ inc/Module/Install/Fetch.pm
 inc/Module/Install/Include.pm
 inc/Module/Install/Makefile.pm
 inc/Module/Install/Metadata.pm
-inc/Module/Install/Scripts.pm
 inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
 lib/App/Env.pm
@@ -21,6 +20,7 @@ MANIFEST			This list of files
 MANIFEST.SKIP
 META.yml
 README
+t/00-load.t
 t/alias.t
 t/App-Env.t
 t/App/Env/App1.pm
@@ -34,8 +34,13 @@ t/App/Env/Site2/App1.pm
 t/appexec.t
 t/badmodule.t
 t/cache.t
+t/default.t
 t/env.t
 t/envstr.t
+t/fatal.t
+t/perlcritic.t
+t/pod-coverage.t
+t/pod.t
 t/site1.t
 t/site2.t
 t/site3.t

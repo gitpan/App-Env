@@ -1,4 +1,77 @@
-2008-03-22 22:44 -0400  djerius  <djerius@cfa.harvard.edu>  (c95c70b57384 [tip])
+2008-06-15  Diab Jerius  <djerius@cfa.harvard.edu>
+
+	Tag 0.10
+
+2008-06-15 23:09 -0400  djerius  <djerius@cfa.harvard.edu>  (6cd0ec6d6198 [tip])
+
+	* t/00-load.t: new file.
+	* t/00-load.t:
+	add boilerplate initial load test
+
+2008-06-15 23:08 -0400  djerius  <djerius@cfa.harvard.edu>  (514bbc511898)
+
+	* t/perlcritic.t: new file.
+	* lib/App/Env.pm, lib/App/Env/Example.pm, t/perlcritic.t:
+	added perlcritic tests. cleaned up source to pass tests
+
+2008-06-15 22:55 -0400  djerius  <djerius@cfa.harvard.edu>  (a8241e191266)
+
+	* t/pod.t: new file.
+	* t/pod.t:
+	add pod test
+
+2008-06-15 22:55 -0400  djerius  <djerius@cfa.harvard.edu>  (a218d2ed3e9e)
+
+	* t/pod-coverage.t: new file.
+	* lib/App/Env.pm, t/pod-coverage.t:
+	add pod-coverage test, clean up errors
+
+2008-06-15 22:53 -0400  djerius  <djerius@cfa.harvard.edu>  (02795a607c6d)
+
+	* t/default.t: new file.
+	* lib/App/Env.pm, t/default.t:
+	add facility to change option defaults: new config function
+
+	Default option values may now be set using the new config function
+	or by passing a single hashref argument when importing the package
+	with use.
+
+2008-06-15 22:49 -0400  djerius  <djerius@cfa.harvard.edu>  (8f6610976844)
+
+	* t/fatal.t: new file.
+	* Makefile.PL, lib/App/Env.pm, t/fatal.t:
+	Added SysFatal option; causes system/qexec/capture methods to die on
+	error.
+
+	if SysFatal is set for an environment, IPC::System::Simple is used
+	to invoke the system, qexec and capture (a new alias for qexec).
+
+2008-03-22 22:54 -0400  djerius  <djerius@cfa.harvard.edu>  (cf62d82334af)
+
+	* .hgtags:
+	Added tag 0.09 for changeset ba4bee9fccf7
+
+2008-03-22 22:54 -0400  djerius  <djerius@cfa.harvard.edu>  (ba4bee9fccf7 [0.09])
+
+	* ChangeLog:
+	really update for release
+
+2008-03-22 22:54 -0400  djerius  <djerius@cfa.harvard.edu>  (0f277be771bb)
+
+	* .hgtags:
+	Removed tag 0.09
+
+2008-03-22 22:51 -0400  djerius  <djerius@cfa.harvard.edu>  (127392a96f69)
+
+	* .hgtags:
+	Added tag 0.09 for changeset d5aed4eacb97
+
+2008-03-22 22:50 -0400  djerius  <djerius@cfa.harvard.edu>  (d5aed4eacb97)
+
+	* Changes, bin/appexec, lib/App/Env.pm:
+	update for release
+
+2008-03-22 22:44 -0400  djerius  <djerius@cfa.harvard.edu>  (c95c70b57384)
 
 	* lib/App/Env.pm, t/alias.t:
 	lowercase aliasing failed if Site was not set.
@@ -74,6 +147,7 @@
 
 2008-03-22 13:17 -0400  djerius  <djerius@cfa.harvard.edu>  (b84150d5cf3e)
 
+	* t/App/Env/Site1/App3.pm, t/App/Env/Site1/App4.pm: new file.
 	* t/App/Env/Site1/App3.pm, t/App/Env/Site1/App4.pm:
 	forgot to add alias test env modules
 
@@ -95,6 +169,7 @@
 
 2008-03-22 11:50 -0400  djerius  <djerius@cfa.harvard.edu>  (e9d63554448f)
 
+	* t/appexec.t: new file.
 	* t/appexec.t:
 	new appexec test; also tests alias
 
@@ -115,6 +190,7 @@
 
 2008-03-22 08:29 -0400  djerius  <djerius@cfa.harvard.edu>  (5d8f5a2a90b4)
 
+	* t/alias.t: new file.
 	* t/alias.t:
 	test aliasing functionality
 
@@ -240,11 +316,14 @@
 
 2008-01-17 15:14 -0500  djerius  <djerius@cfa.harvard.edu>  (649b4e3e59e6)
 
+	* bin/appexec: new file.
 	* bin/appexec, lib/App/Env.pm:
 	added appexec
 
 2008-01-17 15:13 -0500  djerius  <djerius@cfa.harvard.edu>  (f10f36d537d0)
 
+	* MANIFEST.SKIP: new file.
+	* MANIFEST: deleted file.
 	* MANIFEST, MANIFEST.SKIP, Makefile.PL:
 	administrative cleanup; use Module::Install
 
@@ -314,6 +393,7 @@
 
 2007-08-17 12:20 -0400  djerius  <djerius@cfa.harvard.edu>  (d3d9720ca944)
 
+	* t/badmodule.t: new file.
 	* t/badmodule.t:
 	add test for non-existent module
 
@@ -334,11 +414,19 @@
 
 2007-08-16 16:08 -0400  djerius  <djerius@cfa.harvard.edu>  (4f63370307b0)
 
+	* .hgtags: new file.
 	* .hgtags:
 	Added tag 0.01 for changeset f113452d5ba2
 
 2007-08-16 16:08 -0400  djerius  <djerius@cfa.harvard.edu>  (f113452d5ba2 [0.01])
 
+	* ChangeLog, Changes, LICENSE, MANIFEST, Makefile.PL, README,
+	lib/App/Env.pm, lib/App/Env/Example.pm, t/App-Env.t,
+	t/App/Env/App1.pm, t/App/Env/App2.pm, t/App/Env/Site.pm,
+	t/App/Env/Site1/App1.pm, t/App/Env/Site1/App2.pm,
+	t/App/Env/Site2/App1.pm, t/cache.t, t/env.t, t/envstr.t, t/site1.t,
+	t/site2.t, t/site3.t, t/system.t, t/use1.t, t/use2.t, t/use3.t: new
+	file.
 	* ChangeLog, Changes, LICENSE, MANIFEST, Makefile.PL, README,
 	lib/App/Env.pm, lib/App/Env/Example.pm, t/App-Env.t,
 	t/App/Env/App1.pm, t/App/Env/App2.pm, t/App/Env/Site.pm,

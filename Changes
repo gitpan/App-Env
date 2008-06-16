@@ -1,5 +1,11 @@
 Revision history for Perl extension App::Env.
 
+0.10  Sun Jun 15 23:26:29 EDT 2008
+        - new SysFatal option which will cause system/qexec/capture
+	  object methods to throw an exception on error.  Uses
+	  IPC::System::Simple in this case.
+	- Default option values may now be changed.
+
 0.09  Sat Mar 22 22:44:32 EDT 2008
         - lowercase aliasing failed if Site was not set.
 

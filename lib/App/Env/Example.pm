@@ -1,5 +1,7 @@
 package App::Env::Example;
 
+use strict;
+use warnings;
 
 # This example uses Shell::GetEnv to illustrate how to source a shell
 # script which defines the environment for an application.  Other

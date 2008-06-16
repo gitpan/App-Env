@@ -34,7 +34,7 @@ use Params::Validate qw(:all);
 use Module::Find qw( );
 
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use overload
   '%{}' => '_envhash',
@@ -83,7 +83,7 @@ BEGIN {
 
     if ( ! exists $ENV{APP_ENV_SITE} && _existsModule('App::Env::Site') )
     {
-        eval 'use App::Env::Site';
+        eval { require App::Env::Site };
         croak( "Error loading App::Env::Site: $@\n" ) if $@;
     }
 }
@@ -95,15 +95,22 @@ my %SharedOptions =
      Cache    => { default => 1     },
      Site     => { default => undef },
      CacheID  => { default => undef },
+     SysFatal => { default => 0, type => BOOLEAN },
   );
 
 my %ApplicationOptions =
   (
      AppOpts  => { default => {} , type => HASHREF   },
-     CacheID  => { default => undef },
      %SharedOptions,
   );
 
+# options for whom defaults may be changed.  The values
+# in %OptionDefaults are references to the same hashes as in
+# ApplicationOptions & SharedOptions, so modifying them will
+# modify the others.
+my @OptionDefaults = qw( Force Cache Site SysFatal );
+my %OptionDefaults;
+@OptionDefaults{@OptionDefaults} = @ApplicationOptions{@OptionDefaults};
 
 # environment cache
 our %EnvCache;
@@ -147,10 +154,25 @@ sub import {
 	# if no arguments, nothing to do.  "use App::Env;" will cause this.
 	return unless @_;
 
+        # if the only argument is a hash, it sets defaults
+        if ( @_ == 1 && 'HASH' eq ref $_[0] )
+        {
+            config( @_ );
+            return;
+        }
+
 	App::Env->new( @_ )->import;
     }
 }
 
+sub config {
+
+    my %default = validate( @_, \%OptionDefaults );
+
+    $OptionDefaults{$_}{default} = $default{$_} for keys %default;
+
+    return;
+}
 
 sub new
 {
@@ -264,7 +286,7 @@ sub _load_envs
 					app => $app,
 					NoLoad => 1,
 					opt => \%app_opt );
-	push @cacheids, $appo->{cacheid};
+	push @cacheids, $appo->_cacheid;
 	push @Apps, $appo;
     }
 
@@ -300,7 +322,7 @@ sub _load_envs
 	my @modules;
 	foreach my $app ( @Apps )
 	{
-	    push @modules, $app->{module};
+	    push @modules, $app->_module;
 
             # embrace new merged environment
             %ENV = %{$app->load};
@@ -312,7 +334,8 @@ sub _load_envs
 				    cacheid => $cacheid,
 				    opt => \%opts,
 				  );
-	$App->cache if $opts{Cache};
+
+        if ( $opts{Cache} ) { $App->cache; }
     }
 	
     # record the final things we need to know.
@@ -331,10 +354,10 @@ sub _var {
     return ${$self}->{$var};
 }
 
-sub module  { $_[0]->_var('app')->{module} }
-sub cacheid { $_[0]->_var('app')->{cacheid} }
-sub app     { $_[0]->_var('app') }
-sub _envhash{ $_[0]->_var('app')->{ENV} }
+sub module   { $_[0]->_var('app')->{module} }
+sub _opt     { $_[0]->_var('app')->{opt} }
+sub _app     { $_[0]->_var('app') }
+sub _envhash { $_[0]->_var('app')->{ENV} }
 
 
 
@@ -347,11 +370,11 @@ sub cache
 
     if ( $cache )
     {
-	$self->app->cache;
+	$self->_app->cache;
     }
     else
     {
-	$self->app->uncache;
+	$self->_app->uncache;
     }
 }
 
@@ -428,12 +451,14 @@ sub _require_module
 
     if ( defined $module )
     {
+        ## no critic ( ProhibitStringyEval );
         eval "require $module"
           or die $@;
 
         # see if this is an alias
         if ( $module->can('alias') )
         {
+            ## no critic ( ProhibitNoStrict )
             no strict 'refs';
             ( $app, my $napp_opts ) = &{"${module}::alias"}();
             @{$app_opts}{keys %$napp_opts} = @{$napp_opts}{keys %$napp_opts}
@@ -464,6 +489,7 @@ sub _cacheid
 {
     my ( $module, $opt ) = @_;
 
+    ## no critic ( ProhibitAccessOfPrivateData )
     return 
       defined $opt->{CacheID}
         ? $opt->{CacheID}
@@ -505,10 +531,12 @@ sub env     {
 
     if ( wantarray() )
     {
+        ## no critic ( ProhibitAccessOfPrivateData )
         return map { exists $env->{$_} ? $env->{$_} : undef } @vars;
     }
     elsif ( @_ == 1 && ! ref $_[0] )
     {
+        ## no critic ( ProhibitAccessOfPrivateData )
         return $env->{$vars[0]};
     }
     else
@@ -545,6 +573,7 @@ sub str
     }
 
     my $env = $self->_envhash;
+    ## no critic ( ProhibitAccessOfPrivateData )
     my @vars = grep { exists $env->{$_} }
                     $self->_filter_env( $include, $opt{Exclude} );
     return join( ' ',
@@ -595,6 +624,7 @@ sub _match_var
         }
         elsif ( 'CODE' eq ref $spec )
         {
+            ## no critic ( ProhibitAccessOfPrivateData )
             push @keys, grep { $spec->($_, $env->{$_}) } keys %$env;
         }
         else
@@ -655,7 +685,15 @@ sub system
 
     {
 	local %ENV = %{$self};
-	system( @_ );
+        if ( $self->_opt->{SysFatal} )
+        {
+            require IPC::System::Simple;
+            return IPC::System::Simple::system( @_ );
+        }
+        else
+        {
+            return CORE::system( @_ );
+        }
     }
 }
 
@@ -664,9 +702,20 @@ sub qexec
   my $self = shift;
     {
 	local %ENV = %{$self};
-	return qx{ @_ };
+
+        if ( $self->_opt->{SysFatal} )
+        {
+            require IPC::System::Simple;
+            return IPC::System::Simple::capture( @_);
+        }
+        else
+        {
+            return qx{ @_ };
+        }
     }
 }
+
+*capture = \&qexec;
 
 sub exec
 {
@@ -764,10 +813,10 @@ sub load {
     my $module = $self->{module};
 
     my $envs;
-    if ( $module->can('envs' ) )
+    my $fenvs = $module->can('envs' );
+    if ( $fenvs )
     {
-	no strict 'refs';
-	$envs = eval { &{"${module}::envs"}( $self->{opt}{AppOpts} ) };
+	$envs = eval { $fenvs->( $self->{opt}{AppOpts} ) };
 	croak( "error in ${module}::envs: $@\n" )
 	  if $@;
     }
@@ -802,6 +851,8 @@ sub uncache {
 	    == refaddr($self->{ref});
 }
 
+sub _cacheid { $_[0]->{cacheid} };
+sub _module  { $_[0]->{module} };
 
 
 1;
@@ -820,6 +871,10 @@ App::Env - manage application specific environments
   # import an environment at your leisure
   use App::Env;
   App::Env::import( $application, \%opts );
+
+  # set defaults
+  use App::Env ( \%defaults )
+  App::Env::config( %defaults );
 
   # retrieve an environment but don't import it
   $env = App::Env->new( $application, \%opts );
@@ -986,7 +1041,6 @@ non-object oriented interface will suffice.
 For more complicated uses, the object oriented interface allows for
 manipulating multiple separate environments.
 
-
 =head2 Using B<App::Env> without objects
 
 Application environments may be imported into the current environment
@@ -1003,7 +1057,7 @@ function.
   App::Env::import( $application, \%options );
   App::Env::import( @applications, \%shared_options );
 
-Import the specified applications.  
+Import the specified applications.
 
 Options may be applied to specific applications by grouping
 application names and option hashes in arrays:
@@ -1021,7 +1075,6 @@ the last argument.
 
 The available options are listed below.  Not all options may be shared; these
 are noted.
-
 
 =over
 
@@ -1056,7 +1109,25 @@ into account anything in B<AppOpts>. See L</Caching> for more information.
 When used as a shared option for multiple applications, this will be used
 to identify the merged environment.
 
+=item SysFatal I<boolean>
+
+If true, the B<system>, B<qexec>, and B<capture> object methods will throw
+an exception if the passed command exits with a non-zero error.
+
 =back
+
+=back
+
+=head2 Managing Environments
+
+=over
+
+=item config
+
+  App::Env::config( %Defaults );
+
+Configure default options for environments.  See L<Changing Default
+Option Values> for more information.
 
 =item uncache
 
@@ -1257,6 +1328,12 @@ This runs the passed command in the environment defined by B<$env>.
 It has the same argument and returned value convention as the core
 Perl B<system> command.
 
+If the B<SysFatal> flag is set for this environment,
+B<IPC::System::Simple::system> is called, which will cause this method
+to throw an exception if the command returned a non-zero exit value.
+It also avoid invoking a shell to run the command if possible.
+
+
 =item exec
 
   $env->exec( $command, @args );
@@ -1265,15 +1342,47 @@ This execs the passed command in the environment defined by B<$env>.
 It has the same argument and returned value convention as the core
 Perl B<exec> command.
 
+=item capture
 =item qexec
 
-  $env->qexec( $command, @args );
+  $output = $env->qexec( $command, @args );
 
 This acts like the B<qx{}> Perl operator.  It executes the passed
 command in the environment defined by B<$env> and returns its
-(standard) output.
+(standard) output. 
+
+If the B<SysFatal> flag is set for this environment,
+B<IPC::System::Simple::capture> is called, which will cause this
+method to throw an exception if the command returned a non-zero exit
+value.  It also avoid invoking a shell to run the command if possible.
 
 =back
+
+=head2 Changing Default Option Values
+
+Default values for some options may be changed via any of the
+following:
+
+=over
+
+=item *
+
+Passing a hashref as the only argument when initially importing the
+package:
+
+  use App::Env \%Default;
+
+=item *
+
+Calling the B<config> function:
+
+  App::Env::config( %Default );
+
+=back
+
+The following options may have their default values changed:
+
+  Force  Cache  Site  SysFatal
 
 
 =head1 EXAMPLE USAGE
