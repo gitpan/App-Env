@@ -1,8 +1,29 @@
-2008-06-15  Diab Jerius  <djerius@cfa.harvard.edu>
+2008-06-16  Diab Jerius  <djerius@cfa.harvard.edu>
 
-	Tag 0.10
+	Tag 0.11
 
-2008-06-15 23:09 -0400  djerius  <djerius@cfa.harvard.edu>  (6cd0ec6d6198 [tip])
+2008-06-16 12:29 -0400  djerius  <djerius@cfa.harvard.edu>  (9405ca8c69ab [tip])
+
+	* .hgtags:
+	Added tag 0.10 for changeset d42ecd1ead89
+
+2008-06-16 12:25 -0400  djerius  <djerius@cfa.harvard.edu>  (5d7911b71671)
+
+	* t/setenv.t: new file.
+	* lib/App/Env.pm, t/setenv.t:
+	add setenv() method to change the environment
+
+2008-06-16 12:07 -0400  djerius  <djerius@cfa.harvard.edu>  (ff94dd76f646)
+
+	* lib/App/Env.pm:
+	try harder not to auto-vivify environment variables
+
+2008-06-15 23:30 -0400  djerius  <djerius@cfa.harvard.edu>  (d42ecd1ead89 [0.10])
+
+	* ChangeLog, Changes, lib/App/Env.pm:
+	update logs and version for release
+
+2008-06-15 23:09 -0400  djerius  <djerius@cfa.harvard.edu>  (6cd0ec6d6198)
 
 	* t/00-load.t: new file.
 	* t/00-load.t:

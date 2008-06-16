@@ -34,7 +34,7 @@ use Params::Validate qw(:all);
 use Module::Find qw( );
 
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 use overload
   '%{}' => '_envhash',
@@ -529,24 +529,41 @@ sub env     {
 
     my @vars = $self->_filter_env( $include, $opt{Exclude} );
 
+    ## no critic ( ProhibitAccessOfPrivateData )
     if ( wantarray() )
     {
-        ## no critic ( ProhibitAccessOfPrivateData )
         return map { exists $env->{$_} ? $env->{$_} : undef } @vars;
     }
     elsif ( @_ == 1 && ! ref $_[0] )
     {
-        ## no critic ( ProhibitAccessOfPrivateData )
-        return $env->{$vars[0]};
+        return exists $env->{$vars[0]} ? $env->{$vars[0]} : undef;
     }
     else
     {
         my %env;
-        @env{@vars} = @{$self->_envhash}{@vars};
+        @env{@vars} = map { exists $env->{$_} ? $env->{$_} : undef } @vars;
         return \%env;
     }
 }
 
+sub setenv {
+
+    my $self = shift;
+    my $var  = shift;
+
+    defined $var or
+      croak( "missing variable name argument\n" );
+
+    if ( @_ )
+    {
+        $self->_envhash->{$var} = $_[0];
+    }
+    else
+    {
+        delete $self->_envhash->{$var};
+    }
+
+}
 
 # return an env compatible string
 sub str
@@ -1290,6 +1307,20 @@ Variable names may be excluded from the list by passing a hash with
 the key C<Exclude> as the last argument (valid only in contexts 0 and
 3).  The value is either a scalar or an arrayref composed of match
 specifications (as an arrayref) as described in context 3.
+
+=item setenv
+
+  # set an environmental variable
+  $env->setenv( $var, $value );
+
+  # delete an environmetal variable
+  $env->setenv( $var );
+
+If C<$value> is present, assign it to the named environmental
+variable.  If it is not present, delete the variable.
+
+B<Note:> If the environment refers to a cached environment, this will
+affect all instances of the environment which share the cache.
 
 =item module
 
