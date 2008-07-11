@@ -10,7 +10,7 @@ use File::Spec::Functions qw( file_name_is_absolute );
 use Env::Path;
 use App::Env;
 
-our $VERSION = '0.09';
+our $VERSION = '0.12';
 our $prog = basename( $0, '.pl' );
 
 # program options; see parse_args();
@@ -48,30 +48,22 @@ sub main
 
     if ( $opt{dumpenv} )
     {
-	for my $env ( sort keys %ENV )
+	while( my ($env, $val ) = each %ENV )
 	{
-	    my $out = "$env=";
+            $val = App::Env::_shell_escape( $val )
+              if $val ne '' && $opt{dumpenv} ne 'unquoted';
 
-	    if ( $ENV{$env} ne '' )
+	    if ( $opt{dumpenv} =~ /^(bash|ksh)$/ )
 	    {
-		if ( $opt{dumpenv} eq 'unquoted' )
-		{
-		    $out .= $ENV{$env};
-		}
-		else
-		{
-		    $out .= qq('$ENV{$env}');
-		}
+		print "export $env=$val\n";
 	    }
-
-	    if ( $opt{dumpenv} eq 'bash' )
+	    elsif ( $opt{dumpenv} =~ /^(csh|tcsh)$/ )
 	    {
-		print "export $out", "\n";
+		print "setenv $env $val\n";
 	    }
-
 	    else
 	    {
-		print $out, "\n";
+		print "$env=$val\n";
 	    }
 	}
 
@@ -114,7 +106,7 @@ sub parse_args
                         appopts|o=s%
 			usage
 			help
-			dumpenv:s
+			dumpenv|d=s
                         site=s
 			verbose
 			version
@@ -134,10 +126,9 @@ sub parse_args
     # ensure that the dumpenv option is correct
     if ( exists $opt{dumpenv} )
     {
-	$opt{dumpenv} = 'raw' unless $opt{dumpenv} ne '';
 	die( "unsupported dumpenv format: $opt{dumpenv}\n" )
 	  unless grep { $opt{dumpenv} eq $_ }
-	    qw( bash raw unquoted );
+	    qw( ksh bash raw unquoted tcsh csh );
     }
 
     # if --env wasn't specified, the first argument is the application
@@ -207,16 +198,20 @@ B<App::Env> application module.  This option may be specified multiple times.
 
 Specify a site. (See B<App::Env> for more information.)
 
-=item B<--dumpenv>=I<format>
+=item B<--dumpenv>=I<fmt> | B<-d> I<fmt>
 
 Output the environmental variables to the standard output stream.  The
-possible formats are:
+output format is determined by the B<--dumpfmt> option.
+
+The possible formats are:
 
   bash
+  csh
+  ksh
   raw
+  tcsh
   unquoted
 
-If I<format> is not specified, it defaults to C<raw>.
 
 =item B<--verbose>
 

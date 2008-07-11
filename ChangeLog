@@ -1,8 +1,20 @@
-2008-06-16  Diab Jerius  <djerius@cfa.harvard.edu>
+2008-07-11 13:27 -0400  djerius  <djerius@cfa.harvard.edu>  (3bf768a1de9b [tip])
 
-	Tag 0.11
+	* bin/appexec:
+	add (t)csh dumpenv output, make its argument mandatory (to reduce
+	confusion). minor code cleanup
 
-2008-06-16 12:29 -0400  djerius  <djerius@cfa.harvard.edu>  (9405ca8c69ab [tip])
+2008-06-16 12:36 -0400  djerius  <djerius@cfa.harvard.edu>  (3e7c34e9a81d)
+
+	* .hgtags:
+	Added tag 0.11 for changeset 7b894daef420
+
+2008-06-16 12:30 -0400  djerius  <djerius@cfa.harvard.edu>  (7b894daef420 [0.11])
+
+	* ChangeLog, Changes, lib/App/Env.pm:
+	update logs and version for release
+
+2008-06-16 12:29 -0400  djerius  <djerius@cfa.harvard.edu>  (9405ca8c69ab)
 
 	* .hgtags:
 	Added tag 0.10 for changeset d42ecd1ead89
