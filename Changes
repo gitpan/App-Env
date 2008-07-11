@@ -1,7 +1,11 @@
 Revision history for Perl extension App::Env.
 
+0.13  Fri Jul 11 15:59:30 EDT 2008
+        - append semi-colons to appenv's dumpenv output so that shell
+          eval's will actually work
+
 0.12  Fri Jul 11 13:31:09 EDT 2008
-        - dumpenv has more output formats. its value is now required.
+        - appenv's dumpenv has more output formats. its value is now required.
 	  previously it was optional, which led to its grabbing 
 	  the environment name if --env wasn't used. bad form.
 

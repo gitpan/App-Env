@@ -10,7 +10,7 @@ use File::Spec::Functions qw( file_name_is_absolute );
 use Env::Path;
 use App::Env;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 our $prog = basename( $0, '.pl' );
 
 # program options; see parse_args();
@@ -55,11 +55,11 @@ sub main
 
 	    if ( $opt{dumpenv} =~ /^(bash|ksh)$/ )
 	    {
-		print "export $env=$val\n";
+		print "export $env=$val;\n";
 	    }
 	    elsif ( $opt{dumpenv} =~ /^(csh|tcsh)$/ )
 	    {
-		print "setenv $env $val\n";
+		print "setenv $env $val;\n";
 	    }
 	    else
 	    {

@@ -1,4 +1,24 @@
-2008-07-11 13:27 -0400  djerius  <djerius@cfa.harvard.edu>  (3bf768a1de9b [tip])
+2008-07-11  Diab Jerius  <djerius@cfa.harvard.edu>
+
+	Tag 0.13
+
+2008-07-11 15:58 -0400  djerius  <djerius@cfa.harvard.edu>  (416230cc9bdd [tip])
+
+	* bin/appexec:
+	append a semi-colon to appexec's dumpenv output so that a shell eval
+	will actually work
+
+2008-07-11 15:50 -0400  djerius  <djerius@cfa.harvard.edu>  (a58cb17a068f)
+
+	* .hgtags:
+	Added tag 0.12 for changeset 7c1c804f6cda
+
+2008-07-11 13:32 -0400  djerius  <djerius@cfa.harvard.edu>  (7c1c804f6cda [0.12])
+
+	* ChangeLog, Changes, bin/appexec, lib/App/Env.pm:
+	update logs and version for release
+
+2008-07-11 13:27 -0400  djerius  <djerius@cfa.harvard.edu>  (3bf768a1de9b)
 
 	* bin/appexec:
 	add (t)csh dumpenv output, make its argument mandatory (to reduce
