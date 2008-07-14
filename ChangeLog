@@ -1,8 +1,19 @@
-2008-07-11  Diab Jerius  <djerius@cfa.harvard.edu>
+2008-07-11 21:16 -0400  djerius  <djerius@cfa.harvard.edu>  (70f7fa764662 [tip])
 
-	Tag 0.13
+	* lib/App/Env.pm:
+	add more escaped shell magic characters
 
-2008-07-11 15:58 -0400  djerius  <djerius@cfa.harvard.edu>  (416230cc9bdd [tip])
+2008-07-11 17:21 -0400  djerius  <djerius@cfa.harvard.edu>  (b6be5fd98cdf)
+
+	* .hgtags:
+	Added tag 0.13 for changeset df6f823ff77e
+
+2008-07-11 16:01 -0400  djerius  <djerius@cfa.harvard.edu>  (df6f823ff77e [0.13])
+
+	* ChangeLog, Changes, bin/appexec, lib/App/Env.pm:
+	update logs and version for release
+
+2008-07-11 15:58 -0400  djerius  <djerius@cfa.harvard.edu>  (416230cc9bdd)
 
 	* bin/appexec:
 	append a semi-colon to appexec's dumpenv output so that a shell eval

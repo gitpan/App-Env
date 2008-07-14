@@ -34,7 +34,7 @@ use Params::Validate qw(:all);
 use Module::Find qw( );
 
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 use overload
   '%{}' => '_envhash',
@@ -657,7 +657,7 @@ sub _match_var
 
 my $MAGIC_CHARS;
 
-BEGIN {  ( $MAGIC_CHARS = q/\\\$"'!*{};()[]/ ) =~ s/(.)/\\$1/g; }
+BEGIN {  ( $MAGIC_CHARS = q/\|\?\\\$"'!*{};()[]/ ) =~ s/(.)/\\$1/g; }
 
 sub _shell_escape
 {

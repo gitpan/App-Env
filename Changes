@@ -1,5 +1,8 @@
 Revision history for Perl extension App::Env.
 
+0.14  Fri Jul 11 21:17:02 EDT 2008
+        - escape more shell magic characters
+
 0.13  Fri Jul 11 15:59:30 EDT 2008
         - append semi-colons to appenv's dumpenv output so that shell
           eval's will actually work
