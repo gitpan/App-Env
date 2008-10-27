@@ -34,7 +34,7 @@ use Params::Validate qw(:all);
 use Module::Find qw( );
 
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 use overload
   '%{}' => '_envhash',
@@ -655,10 +655,6 @@ sub _match_var
 }
 
 
-my $MAGIC_CHARS;
-
-BEGIN {  ( $MAGIC_CHARS = q/\|\?\\\$"'!*{};()[]/ ) =~ s/(.)/\\$1/g; }
-
 sub _shell_escape
 {
   my $str = shift;
@@ -669,26 +665,10 @@ sub _shell_escape
     $str = "''";
   }
 
-  # if there's white space, single quote the entire word.  however,
-  # since single quotes can't be escaped inside single quotes,
-  # isolate them from the single quoted part and escape them.
-  # i.e., the string a 'b turns into 'a '\''b' 
-  elsif ( $str =~ /\s/ )
-  {
-    # isolate the lone single quotes
-    $str =~ s/'/'\\''/g;
-
-    # quote the whole string
-    $str = "'$str'";
-
-    # remove obvious duplicate quotes.
-    $str =~ s/(^|[^\\])''/$1/g;
-  }
-
-  # otherwise, quote all of the magic characters
+  # otherwise, escape all but the "known" non-magic characters.
   else
   {
-    $str =~  s/([$MAGIC_CHARS])/\\$1/go;
+    $str =~  s{([^\w/.:=\-+%])}{\\$1}go;
   }
 
   $str;

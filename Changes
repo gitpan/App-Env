@@ -1,5 +1,9 @@
 Revision history for Perl extension App::Env.
 
+0.15  Mon Oct 27 14:10:29 EDT 2008
+        - invert logic of shell magic characters; escape those not known to
+	  good.
+
 0.14  Fri Jul 11 21:17:02 EDT 2008
         - escape more shell magic characters
 

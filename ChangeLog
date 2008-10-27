@@ -1,4 +1,31 @@
-2008-07-11 21:16 -0400  djerius  <djerius@cfa.harvard.edu>  (70f7fa764662 [tip])
+2008-10-27  Diab Jerius  <dj@macabre.cfa.harvard.edu>
+
+	Tag 0.15
+
+2008-10-27 14:15 -0400  djerius  <djerius@cfa.harvard.edu>  (eb063fbbcce5 [tip])
+
+	* lib/App/Env.pm:
+	use more conservative approach to escaping shell magic characters.
+
+	Rather than escaping known "bad" characters, escape all characters
+	that are not known to be good. This should fix the problem of
+	missing some characters, at the expense of a few extra escapes.
+
+	Also, removed the logic which escaped white space in strings by
+	quoting the string to simplify things. Now they're escaped via the
+	standard backslash mechanism.
+
+2008-07-11 21:19 -0400  djerius  <djerius@cfa.harvard.edu>  (97a5898b84fd)
+
+	* .hgtags:
+	Added tag 0.14 for changeset d280f4910272
+
+2008-07-11 21:19 -0400  djerius  <djerius@cfa.harvard.edu>  (d280f4910272 [0.14])
+
+	* ChangeLog, Changes, bin/appexec, lib/App/Env.pm:
+	update logs and version for release
+
+2008-07-11 21:16 -0400  djerius  <djerius@cfa.harvard.edu>  (70f7fa764662)
 
 	* lib/App/Env.pm:
 	add more escaped shell magic characters
