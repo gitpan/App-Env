@@ -1,8 +1,160 @@
-2008-10-27  Diab Jerius  <dj@macabre.cfa.harvard.edu>
+2010-05-28 12:10 -0400  djerius  <djerius@cfa.harvard.edu>  (571553dcf7c5 [tip])
 
-	Tag 0.15
+	* t/system.t:
+	make test more Windows friendly, expand test suite
 
-2008-10-27 14:15 -0400  djerius  <djerius@cfa.harvard.edu>  (eb063fbbcce5 [tip])
+2010-05-28 11:43 -0400  djerius  <djerius@cfa.harvard.edu>  (31ca577be894)
+
+	* lib/App/Env.pm:
+	use IPC::System::Simple to emulate qx{} to avoid Windows problems
+
+2010-05-28 11:15 -0400  djerius  <djerius@cfa.harvard.edu>  (57642f58c32b)
+
+	* lib/App/Env.pm:
+	don't import from UNIVERSAL; that is deprecated behavior
+
+2010-05-28 11:09 -0400  djerius  <djerius@cfa.harvard.edu>  (a9e1faab2050)
+
+	* t/appexec.pl: new file.
+	* t/appexec.pl, t/appexec.t:
+	try to get test to work under Windows
+
+2010-05-28 10:51 -0400  djerius  <djerius@cfa.harvard.edu>  (71530433920b)
+
+	* lib/App/Env.pm:
+	add note about how cache id is generated
+
+2010-05-28 10:50 -0400  djerius  <djerius@cfa.harvard.edu>  (009852f9bfaf)
+
+	* lib/App/Env.pm:
+	scan for digest algorithm didn't actually try different algorithms
+
+2010-05-27 18:24 -0400  djerius  <djerius@cfa.harvard.edu>  (d80cb2584b7d)
+
+	* lib/App/Env.pm:
+	pretty up example section
+
+2010-05-27 18:23 -0400  djerius  <djerius@cfa.harvard.edu>  (440ba8bd3849)
+
+	* lib/App/Env.pm:
+	provide example of localizing changes to an environment using the
+	Temp option
+
+2010-05-27 17:44 -0400  djerius  <djerius@cfa.harvard.edu>  (ec25269847ea)
+
+	* t/temp.t: new file.
+	* lib/App/Env.pm, t/temp.t:
+	add "Temp" object support
+
+2010-05-27 17:25 -0400  djerius  <djerius@cfa.harvard.edu>  (c809245031f8)
+
+	* lib/App/Env.pm:
+	clarify which objects may uncache an environment
+
+2010-05-27 17:25 -0400  djerius  <djerius@cfa.harvard.edu>  (78ed58cfd4e5)
+
+	* t/clone.t: new file.
+	* lib/App/Env.pm, t/clone.t:
+	added clone() method, docs, and tests
+
+2010-05-27 17:24 -0400  djerius  <djerius@cfa.harvard.edu>  (84c6ef57e3dc)
+
+	* t/retrieve.t:
+	fix duplicate variable definition warning
+
+2010-05-27 17:09 -0400  djerius  <djerius@cfa.harvard.edu>  (bce78efc732c)
+
+	* t/retrieve.t: new file.
+	* t/retrieve.t:
+	add test for retrieve class function
+
+2010-05-27 16:57 -0400  djerius  <djerius@cfa.harvard.edu>  (ee34a2f2c366)
+
+	* lib/App/Env.pm:
+	added retrieve class function, updated docs to reflect how cacheid
+	and environment signature works.
+
+2010-05-27 16:55 -0400  djerius  <djerius@cfa.harvard.edu>  (b6ea8039498c)
+
+	* lib/App/Env.pm:
+	fix ambiguous (and wrong) method names
+
+2010-05-27 16:53 -0400  djerius  <djerius@cfa.harvard.edu>  (09e2bc125c7c)
+
+	* lib/App/Env.pm:
+	fix typo.
+
+2010-05-26 17:59 -0400  djerius  <djerius@cfa.harvard.edu>  (e34abf326c69)
+
+	* lib/App/Env.pm:
+	no longer using references to track objects; remove unneeded code &
+	dependency
+
+2010-05-26 16:51 -0400  djerius  <djerius@cfa.harvard.edu>  (c5f512a14880)
+
+	* Makefile.PL, lib/App/Env.pm:
+	use Object::ID to track parent object for cached _app objects
+
+	When an App::Env object is cached, it's really the underlying _app
+	object that is cached. The cached object keeps track of its
+	"parent" App::Env object to ensure that only that object can uncache
+	it.
+
+	Previously refaddr was used to identify the parent object; this may
+	not stay constant. Now Object::ID is used.
+
+2010-05-26 12:06 -0400  djerius  <djerius@cfa.harvard.edu>  (ebe057b14652)
+
+	* lib/App/Env.pm:
+	The contents of AppOpts are now included in the cacheid.
+
+2010-05-25 18:00 -0400  djerius  <djerius@cfa.harvard.edu>  (51815b4cf4e6)
+
+	* lib/App/Env.pm:
+	update docs for new public cacheid method
+
+2010-05-25 17:53 -0400  djerius  <djerius@cfa.harvard.edu>  (3b21bafaf4c3)
+
+	* lib/App/Env.pm:
+	simplify code to generated cacheid as the fancy stuff was never used
+
+2010-05-25 17:51 -0400  djerius  <djerius@cfa.harvard.edu>  (c3f92be9f3d3)
+
+	* lib/App/Env.pm:
+	use method rather than poke directly into hash to get value.
+
+2010-05-25 14:16 -0400  djerius  <djerius@cfa.harvard.edu>  (d922fbb9a9b1)
+
+	* lib/App/Env.pm:
+	remove unused variable
+
+2010-05-25 13:53 -0400  djerius  <djerius@cfa.harvard.edu>  (306de8720ae6)
+
+	* lib/App/Env.pm:
+	add some visual blocking into code
+
+2010-05-25 13:50 -0400  djerius  <djerius@cfa.harvard.edu>  (19054e4b29d6)
+
+	* lib/App/Env.pm:
+	remove spurious end of line whitespace
+
+2010-05-25 13:49 -0400  djerius  <djerius@cfa.harvard.edu>  (e3b683f53f1b)
+
+	* lib/App/Env.pm:
+	remove hideous symbolic reference in alias code; can() returns a
+	reference to the subroutine
+
+2008-10-27 14:20 -0400  djerius  <djerius@cfa.harvard.edu>  (e6f62a9fa019)
+
+	* .hgtags:
+	Added tag 0.15 for changeset 9258870b5d3c
+
+2008-10-27 14:20 -0400  djerius  <djerius@cfa.harvard.edu>  (9258870b5d3c [0.15])
+
+	* ChangeLog, Changes, bin/appexec, lib/App/Env.pm:
+	update logs and version for release
+
+2008-10-27 14:15 -0400  djerius  <djerius@cfa.harvard.edu>  (eb063fbbcce5)
 
 	* lib/App/Env.pm:
 	use more conservative approach to escaping shell magic characters.

@@ -3,10 +3,13 @@ abstract: 'manage application specific environments'
 author:
   - 'Diab Jerius, <djerius@cpan.org>'
 build_requires:
+  ExtUtils::MakeMaker: 6.42
   Test::Exception: 0
   Test::More: 0
+configure_requires:
+  ExtUtils::MakeMaker: 6.42
 distribution_type: module
-generated_by: 'Module::Install version 0.77'
+generated_by: 'Module::Install version 0.97'
 license: gpl3
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -24,8 +27,13 @@ requires:
   Getopt::Long: 2.24
   IPC::System::Simple: 0
   Module::Find: 0
+  Object::ID: 0
   Params::Validate: 0
   Pod::Usage: 0
   Scalar::Util: 0
+  Test::Exception: 0
+  Test::More: 0
   perl: 5.8.0
-version: 0.15
+resources:
+  license: http://opensource.org/licenses/gpl-3.0.html
+version: 0.20

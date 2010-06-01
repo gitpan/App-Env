@@ -1,5 +1,9 @@
 Revision history for Perl extension App::Env.
 
+0.20  Fri May 28 12:11:51 EDT 2010
+        - cached environments now keyed off of AppOpts hash
+        - (hopefully) improve Windows compatibility
+
 0.15  Mon Oct 27 14:10:29 EDT 2008
         - invert logic of shell magic characters; escape those not known to
 	  good.
@@ -13,7 +17,7 @@ Revision history for Perl extension App::Env.
 
 0.12  Fri Jul 11 13:31:09 EDT 2008
         - appenv's dumpenv has more output formats. its value is now required.
-	  previously it was optional, which led to its grabbing 
+	  previously it was optional, which led to its grabbing
 	  the environment name if --env wasn't used. bad form.
 
 0.11  Mon Jun 16 12:27:20 EDT 2008

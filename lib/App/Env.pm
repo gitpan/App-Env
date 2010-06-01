@@ -24,22 +24,26 @@ package App::Env;
 use strict;
 use warnings;
 
-use UNIVERSAL qw( isa );
+use Storable qw[ dclone ];
 
 use Carp;
 use Params::Validate qw(:all);
+use Object::ID;
 
 # need to distinguish between a non-existent module
 # and one which has compile errors.
 use Module::Find qw( );
 
 
-our $VERSION = '0.15';
+our $VERSION = '0.20';
 
 use overload
   '%{}' => '_envhash',
   '""'  => 'str',
   fallback => 1;
+
+
+#-------------------------------------------------------
 
 
 my %existsModule;
@@ -78,6 +82,8 @@ sub _existsModule
     return $existsModule{$path};
 }
 
+#-------------------------------------------------------
+
 # allow site specific site definition
 BEGIN {
 
@@ -88,6 +94,7 @@ BEGIN {
     }
 }
 
+#-------------------------------------------------------
 
 # Options
 my %SharedOptions =
@@ -95,6 +102,7 @@ my %SharedOptions =
      Cache    => { default => 1     },
      Site     => { default => undef },
      CacheID  => { default => undef },
+     Temp     => { default => 0     },
      SysFatal => { default => 0, type => BOOLEAN },
   );
 
@@ -103,6 +111,9 @@ my %ApplicationOptions =
      AppOpts  => { default => {} , type => HASHREF   },
      %SharedOptions,
   );
+
+my %CloneOptions = %{ dclone({ map { $_ => $SharedOptions{$_} } qw[ CacheID Cache SysFatal ]} ) };
+$CloneOptions{Cache}{default} = 0;
 
 # options for whom defaults may be changed.  The values
 # in %OptionDefaults are references to the same hashes as in
@@ -114,6 +125,10 @@ my %OptionDefaults;
 
 # environment cache
 our %EnvCache;
+
+#-------------------------------------------------------
+#-------------------------------------------------------
+
 
 # import one or more environments.  this may be called in the following
 # contexts:
@@ -133,12 +148,12 @@ sub import {
     my $this = $_[0];
 
     # object method?
-    if ( ref $this && isa( $this, __PACKAGE__ ) )
+    if ( ref $this && $this->isa(__PACKAGE__) )
     {
 	my $self = shift;
 	die( __PACKAGE__, "->import: too many arguments\n" )
 	  if @_;
-	
+
 	while( my ( $key, $value ) = each %{$self} )
 	{
 	    $ENV{$key} = $value;
@@ -165,6 +180,28 @@ sub import {
     }
 }
 
+
+# class method
+# retrieve a cached environment.
+sub retrieve {
+
+    my ( $cacheid ) = @_;
+
+    my $self;
+
+    if ( defined $EnvCache{ $cacheid } )
+    {
+	$self = __PACKAGE__->new();
+
+	$self->_var( app => $EnvCache{ $cacheid } );
+    }
+
+
+    return $self;
+}
+
+#-------------------------------------------------------
+
 sub config {
 
     my %default = validate( @_, \%OptionDefaults );
@@ -173,6 +210,8 @@ sub config {
 
     return;
 }
+
+#-------------------------------------------------------
 
 sub new
 {
@@ -185,10 +224,33 @@ sub new
     # use $$self->{}
     my $self = bless \ { }, $class;
 
-    $self->_load_envs( @_, $opts );
+    $self->_load_envs( @_, $opts ) if @_;
 
     return $self;
 }
+
+#-------------------------------------------------------
+
+sub clone
+{
+    my $self = shift;
+
+    my %nopt = validate( @_, \%CloneOptions );
+
+    my $clone = dclone( $self );
+
+    # create new cache id
+    $clone->_cacheid( defined $nopt{CacheID} ? $nopt{CacheID} : $self->object_id );
+
+    my %opt = ( %{$clone->_opt}, %nopt );
+    $clone->_opt( \%opt );
+
+    $clone->cache( $opt{Cache} );
+
+    return $clone;
+}
+
+#-------------------------------------------------------
 
 sub _load_envs
 {
@@ -214,6 +276,9 @@ sub _load_envs
 			       ? \%ApplicationOptions
 			       : \%SharedOptions );
 
+
+    $opts{Cache} = 0 if $opts{Temp};
+
     # iterate through the applications to ensure that any application specific
     # options are valid and to form a basis for a multi-application
     # cacheid to check for cacheing.
@@ -221,8 +286,6 @@ sub _load_envs
     my @Apps;
     for my $app ( @apps )
     {
-	my $App;
-
 	# initialize the application specific opts from the shared opts
 	my %app_opt = %opts;
 
@@ -282,7 +345,7 @@ sub _load_envs
         # environments if later it turns out this is a cached
         # multi-application environment
 	%app_opt = ( validate( @opts, \%ApplicationOptions ));
-	my $appo = App::Env::_app->new( ref => $self,
+	my $appo = App::Env::_app->new( pid => $self->object_id,
 					app => $app,
 					NoLoad => 1,
 					opt => \%app_opt );
@@ -298,7 +361,21 @@ sub _load_envs
     # use cache if possible
     if ( ! $opts{Force} && exists $EnvCache{$cacheid} )
     {
-	$App = $EnvCache{$cacheid};
+	# if this is a temporary object and a cached version exists,
+	# clone it and assign a new cache id.
+	if ( $opts{Temp} )
+	{
+	    $App = dclone( $EnvCache{$cacheid} );
+
+	    # should really call $self->_cacheid here, but $self
+	    # doesn't have an app attached to it yet so that'll fail.
+	    $App->_cacheid( $self->object_id );
+	}
+
+	else
+	{
+	    $App = $EnvCache{$cacheid};
+	}
     }
 
     # not cached; is this really just a single application?
@@ -337,11 +414,13 @@ sub _load_envs
 
         if ( $opts{Cache} ) { $App->cache; }
     }
-	
+
     # record the final things we need to know.
     $self->_var( app     => $App );
 }
 
+
+#-------------------------------------------------------
 
 # simple accessors to reduce confusion because of double reference in $self
 
@@ -354,12 +433,15 @@ sub _var {
     return ${$self}->{$var};
 }
 
-sub module   { $_[0]->_var('app')->{module} }
-sub _opt     { $_[0]->_var('app')->{opt} }
+sub module   { $_[0]->_var('app')->_module }
+sub cacheid  { $_[0]->_var('app')->_cacheid }
+sub _cacheid { my $self = shift; $self->_var('app')->_cacheid(@_) }
+sub _opt     { my $self = shift; $self->_var('app')->_opt(@_) }
 sub _app     { $_[0]->_var('app') }
 sub _envhash { $_[0]->_var('app')->{ENV} }
 
 
+#-------------------------------------------------------
 
 sub cache
 {
@@ -413,17 +495,21 @@ sub uncache
 
         # don't use normal rules for Site specification as we're trying
         # to delete a specific one.
-	delete $EnvCache{ _cacheid( _modulename( $opt{Site}, $opt{App} ), {} )};
+	delete $EnvCache{ _mk_cacheid( _modulename( $opt{Site}, $opt{App} ) )};
     }
 
     return;
 }
+
+#-------------------------------------------------------
 
 sub _modulename
 {
     return join( '::', 'App::Env', @_ );
 }
 
+
+#-------------------------------------------------------
 
 # construct a module name based upon the current or requested site.
 # requires the module if found.  returns the module name if module is
@@ -456,11 +542,9 @@ sub _require_module
           or die $@;
 
         # see if this is an alias
-        if ( $module->can('alias') )
+        if ( my $alias = $module->can('alias') )
         {
-            ## no critic ( ProhibitNoStrict )
-            no strict 'refs';
-            ( $app, my $napp_opts ) = &{"${module}::alias"}();
+            ( $app, my $napp_opts ) = $alias->();
             @{$app_opts}{keys %$napp_opts} = @{$napp_opts}{keys %$napp_opts}
               if $napp_opts;
             return _require_module( $app, $usite, ++$loop, $app_opts );
@@ -475,6 +559,8 @@ sub _require_module
     return ( $module, $app_opts );
 }
 
+#-------------------------------------------------------
+
 # consolidate handling of APP_ENV_SITE environment variable
 
 sub _App_Env_Site {
@@ -485,17 +571,15 @@ sub _App_Env_Site {
     return;
 }
 
-sub _cacheid
-{
-    my ( $module, $opt ) = @_;
+#-------------------------------------------------------
 
-    ## no critic ( ProhibitAccessOfPrivateData )
-    return 
-      defined $opt->{CacheID}
-        ? $opt->{CacheID}
-	: $module;
+sub _mk_cacheid
+{
+    return join( $;, grep { defined $_ } @_ );
 }
 
+
+#-------------------------------------------------------
 
 sub _exclude_param_check
 {
@@ -504,6 +588,8 @@ sub _exclude_param_check
       || 'Regexp' eq ref $_[0]
       || 'CODE'   eq ref $_[0];
 }
+
+#-------------------------------------------------------
 
 sub env     {
     my $self = shift;
@@ -546,6 +632,8 @@ sub env     {
     }
 }
 
+#-------------------------------------------------------
+
 sub setenv {
 
     my $self = shift;
@@ -564,6 +652,8 @@ sub setenv {
     }
 
 }
+
+#-------------------------------------------------------
 
 # return an env compatible string
 sub str
@@ -598,6 +688,8 @@ sub str
 	       );
 }
 
+#-------------------------------------------------------
+
 # return a list of included variables, in the requested
 # order, based upon a list of include and exclude specs.
 # variable names  passed as plain strings are not checked
@@ -611,6 +703,8 @@ sub _filter_env
     my %exclude = map { $_ => 1 } @exclude;
     return grep { ! $exclude{$_} } $self->_match_var( $included );
 }
+
+#-------------------------------------------------------
 
 # return a list of variables which matched the specifications.
 # this takes a list of scalars, coderefs, or regular expressions.
@@ -654,6 +748,8 @@ sub _match_var
     return @keys;
 }
 
+#-------------------------------------------------------
+
 
 sub _shell_escape
 {
@@ -674,7 +770,7 @@ sub _shell_escape
   $str;
 }
 
-###############################################
+#-------------------------------------------------------
 
 sub system
 {
@@ -694,25 +790,25 @@ sub system
     }
 }
 
+#-------------------------------------------------------
+
 sub qexec
 {
-  my $self = shift;
-    {
-	local %ENV = %{$self};
+    my $self = shift;
+    local %ENV = %{$self};
 
-        if ( $self->_opt->{SysFatal} )
-        {
-            require IPC::System::Simple;
-            return IPC::System::Simple::capture( @_);
-        }
-        else
-        {
-            return qx{ @_ };
-        }
-    }
+    require IPC::System::Simple;
+
+    my $res = eval { IPC::System::Simple::capture( @_); };
+
+    $@ ? ( $self->_opt->{SysFatal} ? die($@) : return ) : return $res;
 }
 
+#-------------------------------------------------------
+
 *capture = \&qexec;
+
+#-------------------------------------------------------
 
 sub exec
 {
@@ -728,17 +824,20 @@ sub exec
 
 
 ###############################################
+###############################################
 
 package App::Env::_app;
 
 use Carp;
-use Scalar::Util qw( refaddr );
+use Storable qw[ dclone freeze ];
+use Digest;
+use Object::ID;
 
 use strict;
 use warnings;
 
-# new( ref => $ref, app => $app, opt => \%opt )
-# new( ref => $ref, env => \%env, module => $module, cacheid => $cacheid )
+# new( pid => $pid, app => $app, opt => \%opt )
+# new( pid => $pid, env => \%env, module => $module, cacheid => $cacheid )
 sub new
 {
     my ( $class, %opt ) = @_;
@@ -756,7 +855,8 @@ sub new
     else
     {
 	# make copy of options
-	$opt{opt} = { %{$opt{opt}} };
+
+	$opt{opt} = dclone($opt{opt});
 
 	( $opt{module}, my $app_opts )
           = eval { App::Env::_require_module( $opt{app}, $opt{opt}{Site} ) };
@@ -770,9 +870,43 @@ sub new
         $opt{opt}{AppOpts} ||= {};
         $opt{opt}{AppOpts} = { %$app_opts, %{$opt{opt}{AppOpts}} };
 
-	$opt{cacheid} = defined $opt{opt}{CacheId}
-	                  ? $opt{opt}{CacheId}
-			  : App::Env::_cacheid( $opt{module}, $opt{opt} );
+	if ( defined $opt{opt}{CacheID} )
+	{
+	    $opt{cacheid} = $opt{opt}{CacheID};
+	}
+	else
+	{
+	    # create a hash of unique stuff which will be folded
+	    # into the cacheid
+	    my %uniq;
+	    $uniq{AppOpts} = $opt{opt}{AppOpts}
+	      if defined $opt{opt}{AppOpts} && keys %{$opt{opt}{AppOpts}};
+
+	    my $digest;
+
+	    if ( keys %uniq )
+	    {
+		local $Storable::canonical = 1;
+		my $digest = freeze( \%uniq );
+
+		# use whatever digest aglorithm we can find.  if none is
+		# found, default to the frozen representation of the
+		# options
+		for my $alg ( qw[ SHA-256 SHA-1 MD5 ] )
+		{
+		    my $ctx = eval { Digest->new( $alg ) };
+
+		    if ( defined $ctx )
+		    {
+			$digest = $ctx->add( $digest )->digest;
+			last;
+		    }
+		}
+
+	    }
+
+	    $opt{cacheid} = App::Env::_mk_cacheid( $opt{module}, $digest );
+	}
     }
 
     # return cached entry if possible
@@ -785,14 +919,6 @@ sub new
     {
 	$self = bless \%opt, $class;
 
-	# weak references don't exist under older versions of perl.
-	# on those systems, ignore the error returned by Scalar::Util.
-	# the only repercussion is that there will be a small amount
-	# of memory that won't be freed until this environment is
-	# uncached.
-
-	eval { Scalar::Util::weaken( $self->{ref} ) };
-
 	$self->load unless $self->{NoLoad};
 	delete $self->{NoLoad};
     }
@@ -800,6 +926,8 @@ sub new
 
     return $self;
 }
+
+#-------------------------------------------------------
 
 sub load {
     my ( $self ) = @_;
@@ -831,11 +959,15 @@ sub load {
     return $self->{ENV};
 }
 
+#-------------------------------------------------------
+
 sub cache {
     my ( $self ) = @_;
 
     $App::Env::EnvCache{$self->{cacheid}} = $self;
 }
+
+#-------------------------------------------------------
 
 sub uncache {
     my ( $self ) = @_;
@@ -843,14 +975,18 @@ sub uncache {
     my $cacheid = $self->{cacheid};
 
     delete $App::Env::EnvCache{$cacheid}
-      if exists $App::Env::EnvCache{$cacheid} 
-	&& refaddr($App::Env::EnvCache{$cacheid}{ref}) 
-	    == refaddr($self->{ref});
+      if exists $App::Env::EnvCache{$cacheid}
+	&& $App::Env::EnvCache{$cacheid}{pid} eq $self->{pid};
 }
 
-sub _cacheid { $_[0]->{cacheid} };
+#-------------------------------------------------------
+
+sub _opt     { @_ > 1 ? $_[0]->{opt}     = $_[1] : $_[0]->{opt} };
+sub _cacheid { @_ > 1 ? $_[0]->{cacheid} = $_[1] : $_[0]->{cacheid} };
 sub _module  { $_[0]->{module} };
 
+
+#-------------------------------------------------------
 
 1;
 __END__
@@ -935,16 +1071,17 @@ easily run applications within those environments.
 
 =head2 Environment Caching
 
-By default the environmental variables returned by the application
-environment modules are cached.  A cache entry is given a unique key
-which is by default generated from the module name.  This key does
-B<not> take into account the contents (if any) of the B<AppOpts> hash
-(see below).  If the application's environment changes based upon
-B<AppOpts>, an attempt to load the same application with different
-values for B<AppOpts> will lead to the retrieval of the first, cached
-environment, rather than the new environment.  To avoid this, use the
-B<CacheID> option to explicitly specify a unique key for environments
-if this will be a problem.
+By default the environment returned by an application environment
+module is cached and assigned a unique cache id using a signature
+generated from the module's name and the contents of the B<AppOpts>
+hash.  When a new environment is requested (and the C<Force> option is
+false) the cache is searched for a signature matching that of the
+requested environment.
+
+The cache id key may also be explicitly specified via the B<CacheID>
+option; this will effectively prevent the cached environment from
+being automatically found.  To retrieve a cached environment using its
+cache id use the B<retrieve()> function.
 
 If multiple applications are loaded via a single call to B<import> or
 B<new> the applications will be loaded incremently in the order
@@ -1079,9 +1216,7 @@ are noted.
 
 This is a hash of options to pass to the
 C<App::Env::E<lt>applicationE<gt>> module.  Their meanings are
-application specific.  As noted in L</Caching> the caching mechanism
-is B<not> keyed off of this information -- use B<CacheID> to ensure a
-unique cache key.
+application specific.
 
 This option may not be shared.
 
@@ -1100,18 +1235,34 @@ multiple environments are loaded the I<combination> is also cached.
 
 =item CacheID
 
-A unique name for the environment. The default cache key doesn't take
-into account anything in B<AppOpts>. See L</Caching> for more information.
+A unique name for the environment. See L</Environment Caching> for more information.
 
-When used as a shared option for multiple applications, this will be used
-to identify the merged environment.
+When used as a shared option for multiple applications, this will be
+used to identify the merged environment.  Note that explicitly setting
+the cache id effectively prevents the environment from being
+automatically reused when a similar environment is requested via the
+B<new()> constructor (see L</Environment Caching>).
 
 =item SysFatal I<boolean>
 
 If true, the B<system>, B<qexec>, and B<capture> object methods will throw
 an exception if the passed command exits with a non-zero error.
 
+=item Temp I<boolean>
+
+If true, and the requested environment does not exist in the cache,
+create it but do not cache it (this overrides the B<Cache> option).
+If the requested environment does exist in the cache, return an
+uncached clone of it.
+
 =back
+
+=item retrieve
+
+  $env = App::Env::retrieve( $cacheid );
+
+Retrieve the environment with the given cache id, or undefined if it
+doesn't exist.
 
 =back
 
@@ -1133,7 +1284,7 @@ Option Values> for more information.
 
 
 Delete the cache entry for the given application.  If C<Site> is not
-specified, the site is determined as specified in </Site Specific
+specified, the site is determined as specified in L</Site Specific
 Contexts>.
 
 It is currently I<not> possible to use this interface to
@@ -1178,7 +1329,7 @@ B<App::Env> objects give greater flexibility when dealing with
 multiple applications with incompatible environments.
 
 
-=head3 The constructor
+=head3 Constructors
 
 =over
 
@@ -1188,6 +1339,24 @@ multiple applications with incompatible environments.
 
 B<new> takes the same arguments as B<App::Env::import> and returns
 an B<App::Env> object.  It does not modify the environment.
+
+
+=item clone
+
+  $clone = $app->clone( \%opts );
+
+Clone an existing environment.  The available options are C<CacheID>,
+C<Cache>, C<SysFatal> (see the documentation for the B<import> function).
+
+The cloned environment is by default not cached.  If caching is
+requested and a cache id is not provided, a unique id is created --
+it will I<not> be the same as that of the original environment.
+
+This cache id is not based on a signature of the environment, so this
+environment will effectively not be automatically reused when a
+similar environment is requested via the B<new> constructor (see
+L</Environment Caching>).
+
 
 =back
 
@@ -1214,6 +1383,17 @@ for its format.
 If C<$cache_state> is true, cache this environment for the application
 associated with B<$env>.  If C<$cache_state> is false and this
 environment is being cached, delete the cache.
+
+Note that only the original B<App::Env> object which cached the
+environment may delete it.  Objects which reuse existing, cached,
+environments cannot.
+
+
+=item cacheid
+
+  $cacheid = $env->cacheid;
+
+Returns the cache id for this environment.
 
 =item env
 
@@ -1360,7 +1540,7 @@ Perl B<exec> command.
 
 This acts like the B<qx{}> Perl operator.  It executes the passed
 command in the environment defined by B<$env> and returns its
-(standard) output. 
+(standard) output.
 
 If the B<SysFatal> flag is set for this environment,
 B<IPC::System::Simple::capture> is called, which will cause this
@@ -1398,22 +1578,21 @@ The following options may have their default values changed:
 
 =head1 EXAMPLE USAGE
 
-=over
 
-=item A single application
+=head2 A single application
 
 This is the simplest case.  If you don't care if you "pollute" the
 current environment, then simply
 
   use App::Env qw( ApplicationName );
 
-=item A single application with options
+=head2 A single application with options
 
 If the B<CIAO> environment module provides a C<Version> option:
 
   use App::Env ( 'CIAO', { AppOpts => { Version => 3.4 } } );
 
-=item Two compatible applications
+=head2 Two compatible applications
 
 If two applications can share an environment, and you don't mind
 changing the current environment;
@@ -1440,7 +1619,7 @@ Or,
 
 if you prefer not to use the B<system> method.
 
-=item Two incompatible applications
+=head2 Two incompatible applications
 
 If two applications can't share the environment, you'll need to
 load them seperately:
@@ -1461,7 +1640,27 @@ This hopefully won't overfill the shell's command buffer. If you need
 to specify only parts of the environment, use the B<str> method to
 explicitly create the arguments to the B<env> command.
 
-=back
+
+=head2 Localizing changes to an environment
+
+In some contexts an environment must be customized but the changes
+shouldn't propagate into the (possibly) cached version.  A good
+example of this is in sandboxing functions which may manipulate an
+environment.
+
+The B<new()> constructor doesn't indicate whether an environment was
+freshly constructed or pulled from cache, so the user can't tell if
+manipulating it will affect other code paths.  One way around this is
+to force construction of a fresh environment using the C<Force> option
+and turning off caching via the C<Cache> option.
+
+This guarantees isolation but is inefficient (if a compatible
+environment is cached it won't be used) and any tweaks made to the
+environment by the application are not seen.  Instead, use the C<Temp>
+option; this will either create a new environment if none exists or
+clone an existing one.  In either case the result won't be cached and
+any changes will be localized.
+
 
 =head1 BUGS AND LIMITATIONS
 
@@ -1471,10 +1670,15 @@ Please report any bugs or feature requests to
 C<bug-app-env@rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=App-Env>.
 
+The cache id is generated from the contents of the B<AppOpts> hash by
+freezing it with B<Storable::freeze> and either generating a digest
+using B<Digest> (if the proper modules are available) or using it
+directly.  This may cause strangeness if B<AppOpts> contains data or
+objects which do not freeze well.
+
 =head1 SEE ALSO
 
 B<appexec>
-
 
 =head1 AUTHOR
 

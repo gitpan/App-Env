@@ -10,6 +10,7 @@ inc/Module/Install/Fetch.pm
 inc/Module/Install/Include.pm
 inc/Module/Install/Makefile.pm
 inc/Module/Install/Metadata.pm
+inc/Module/Install/Scripts.pm
 inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
 lib/App/Env.pm
@@ -31,9 +32,11 @@ t/App/Env/Site1/App2.pm
 t/App/Env/Site1/App3.pm
 t/App/Env/Site1/App4.pm
 t/App/Env/Site2/App1.pm
+t/appexec.pl
 t/appexec.t
 t/badmodule.t
 t/cache.t
+t/clone.t
 t/default.t
 t/env.t
 t/envstr.t
@@ -41,11 +44,13 @@ t/fatal.t
 t/perlcritic.t
 t/pod-coverage.t
 t/pod.t
+t/retrieve.t
 t/setenv.t
 t/site1.t
 t/site2.t
 t/site3.t
 t/system.t
+t/temp.t
 t/use1.t
 t/use2.t
 t/use3.t

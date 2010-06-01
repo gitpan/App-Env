@@ -21,6 +21,7 @@ requires 'Module::Find';
 requires 'Env::Path';
 requires 'File::Spec::Functions';
 requires 'IPC::System::Simple';
+requires 'Object::ID';
 
 install_script 'bin/appexec';
 

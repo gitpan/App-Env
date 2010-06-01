@@ -4,24 +4,31 @@ use Test::More tests => 2;
 
 use lib 't';
 
+use File::Temp;
+use File::Spec::Functions qw[ catfile ];
+
 #############################################################
 
-{
-    open( my $fh, '-|',
-          $^X, '-Mblib', '-It', 'blib/script/appexec', 'App1',
-          $^X, '-e', 'print "$ENV{Site1_App1}"' )
-      or die( "error opening pipe to appexec\n" );
 
-    my $res = <$fh>;
+my $exe = catfile( qw[ blib script appexec ] );
+my $script = catfile( qw [ t appexec.pl ] );
+
+{
+    my $fh = File::Temp->new;
+
+    system( $^X, '-Mblib', '-It', $exe, 'App1', $^X, $script, $fh->filename ) == 0
+      or die( "error running appexec\n" );
+
+    chomp(my $res = <$fh>);
     is( $res, '1', 'direct' );
 }
 
 {
-    open( my $fh, '-|',
-          $^X, '-Mblib', '-It', 'blib/script/appexec', 'App3',
-          $^X, '-e', 'print "$ENV{Site1_App1}"' )
-      or die( "error opening pipe to appexec\n" );
+    my $fh = File::Temp->new;
 
-    my $res = <$fh>;
+    system( $^X, '-Mblib', '-It', $exe, 'App3', $^X, $script, $fh->filename ) == 0
+      or die( "error running appexec\n" );
+
+    chomp(my $res = <$fh>);
     is( $res, '1', 'alias' );
 }
