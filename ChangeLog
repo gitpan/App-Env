@@ -1,4 +1,31 @@
-2010-05-28 12:10 -0400  djerius  <djerius@cfa.harvard.edu>  (571553dcf7c5 [tip])
+2010-06-02 10:54 -0400  djerius  <djerius@cfa.harvard.edu>  (8f393076b284 [tip])
+
+	* lib/App/Env.pm, t/clone.t:
+	remove missed vestige of Object::ID. rename object_id to lobject_id
+	to not collide with possibly working future version of Object::ID.
+
+2010-06-02 10:27 -0400  djerius  <djerius@cfa.harvard.edu>  (d37484ebb771)
+
+	* Makefile.PL, lib/App/Env.pm, t/clone.t:
+	replace Object::ID with homegrown variant
+
+	Object::ID uses Hash::FieldHash, which tries for backwards
+	compatibility with older Perls. Unfortunately it triggers a
+	stringification of the App::Env object (which has stringification
+	overloaded), which causes problems. Instead, a kludgy replacement
+	has been written.
+
+2010-06-01 13:07 -0400  djerius  <djerius@cfa.harvard.edu>  (75844f138bf0)
+
+	* .hgtags:
+	Added tag 0.20 for changeset 01c4718241d1
+
+2010-06-01 13:07 -0400  djerius  <djerius@cfa.harvard.edu>  (01c4718241d1 [0.20])
+
+	* ChangeLog, Changes, lib/App/Env.pm:
+	update version & logs for release
+
+2010-05-28 12:10 -0400  djerius  <djerius@cfa.harvard.edu>  (571553dcf7c5)
 
 	* t/system.t:
 	make test more Windows friendly, expand test suite

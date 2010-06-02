@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 use lib 't';
 
@@ -35,6 +35,9 @@ $app1->setenv( 'AppEnvTestID' => $$ );
     # and ensure that the parent environment has not been changed
 
     is( $app1->env('CloneTest'), undef, "check parent env" );
+
+    # and ensure that the clone has a new object id
+    isnt( $app1->lobject_id, $clone->lobject_id, "clone object id" );
 
 }
 

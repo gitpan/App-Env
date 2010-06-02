@@ -27,7 +27,6 @@ requires:
   Getopt::Long: 2.24
   IPC::System::Simple: 0
   Module::Find: 0
-  Object::ID: 0
   Params::Validate: 0
   Pod::Usage: 0
   Scalar::Util: 0
@@ -36,4 +35,4 @@ requires:
   perl: 5.8.0
 resources:
   license: http://opensource.org/licenses/gpl-3.0.html
-version: 0.20
+version: 0.21

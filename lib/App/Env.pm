@@ -28,14 +28,14 @@ use Storable qw[ dclone ];
 
 use Carp;
 use Params::Validate qw(:all);
-use Object::ID;
+
 
 # need to distinguish between a non-existent module
 # and one which has compile errors.
 use Module::Find qw( );
 
 
-our $VERSION = '0.20';
+our $VERSION = '0.21';
 
 use overload
   '%{}' => '_envhash',
@@ -238,9 +238,10 @@ sub clone
     my %nopt = validate( @_, \%CloneOptions );
 
     my $clone = dclone( $self );
+    delete ${$clone}->{id};
 
     # create new cache id
-    $clone->_cacheid( defined $nopt{CacheID} ? $nopt{CacheID} : $self->object_id );
+    $clone->_cacheid( defined $nopt{CacheID} ? $nopt{CacheID} : $self->lobject_id );
 
     my %opt = ( %{$clone->_opt}, %nopt );
     $clone->_opt( \%opt );
@@ -345,7 +346,7 @@ sub _load_envs
         # environments if later it turns out this is a cached
         # multi-application environment
 	%app_opt = ( validate( @opts, \%ApplicationOptions ));
-	my $appo = App::Env::_app->new( pid => $self->object_id,
+	my $appo = App::Env::_app->new( pid => $self->lobject_id,
 					app => $app,
 					NoLoad => 1,
 					opt => \%app_opt );
@@ -369,7 +370,7 @@ sub _load_envs
 
 	    # should really call $self->_cacheid here, but $self
 	    # doesn't have an app attached to it yet so that'll fail.
-	    $App->_cacheid( $self->object_id );
+	    $App->_cacheid( $self->lobject_id );
 	}
 
 	else
@@ -440,6 +441,32 @@ sub _opt     { my $self = shift; $self->_var('app')->_opt(@_) }
 sub _app     { $_[0]->_var('app') }
 sub _envhash { $_[0]->_var('app')->{ENV} }
 
+# would rather use Object::ID but it uses Hash::FieldHash which
+# (through no fault of its own:
+# http://rt.cpan.org/Ticket/Display.html?id=58030 ) stringify's the
+# passed reference on pre 5.10 perls, which causes problems.
+
+# stolen as much as possible from Object::ID to keep the interface the same
+{
+    my $Last_ID = "a";
+
+=pod
+
+=begin Pod::Coverage
+
+=item lobject_id
+
+=end Pod::Coverage
+
+=cut
+
+    sub lobject_id {
+        my $self = shift;
+
+        return $self->_var('id') if defined $self->_var('id');
+        return $self->_var('id', ++$Last_ID);
+    }
+}
 
 #-------------------------------------------------------
 
@@ -831,7 +858,6 @@ package App::Env::_app;
 use Carp;
 use Storable qw[ dclone freeze ];
 use Digest;
-use Object::ID;
 
 use strict;
 use warnings;
