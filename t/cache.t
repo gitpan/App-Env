@@ -6,7 +6,7 @@ BEGIN { use_ok('App::Env') };
 
 #############################################################
 
-# check simple caching and uncaching 
+# check simple caching and uncaching
 
 App::Env::import( 'App1' );
 is( $ENV{Site1_App1}, 1, "import func 1, cache on" );
@@ -101,7 +101,7 @@ App::Env::Site1::App2::reset();
     $obj1->cache(0);
     $obj1 = App::Env->new( 'App1' );
     is( $obj1->env('Site1_App1'), 2, "method 1, cache on" );
-    
+
     # make sure that last one was cached
     $obj1 = App::Env->new( 'App1' );
     is( $obj1->env('Site1_App1'), 2, "method 1, cache on" );

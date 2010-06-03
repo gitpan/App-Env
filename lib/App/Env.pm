@@ -35,7 +35,7 @@ use Params::Validate qw(:all);
 use Module::Find qw( );
 
 
-our $VERSION = '0.21';
+our $VERSION = '0.22';
 
 use overload
   '%{}' => '_envhash',
@@ -241,7 +241,7 @@ sub clone
     delete ${$clone}->{id};
 
     # create new cache id
-    $clone->_cacheid( defined $nopt{CacheID} ? $nopt{CacheID} : $self->lobject_id );
+    $clone->_app->mk_cacheid( CacheID => defined $nopt{CacheID} ? $nopt{CacheID} : $self->lobject_id );
 
     my %opt = ( %{$clone->_opt}, %nopt );
     $clone->_opt( \%opt );
@@ -350,7 +350,7 @@ sub _load_envs
 					app => $app,
 					NoLoad => 1,
 					opt => \%app_opt );
-	push @cacheids, $appo->_cacheid;
+	push @cacheids, $appo->cacheid;
 	push @Apps, $appo;
     }
 
@@ -368,9 +368,9 @@ sub _load_envs
 	{
 	    $App = dclone( $EnvCache{$cacheid} );
 
-	    # should really call $self->_cacheid here, but $self
+	    # should really call $self->cacheid here, but $self
 	    # doesn't have an app attached to it yet so that'll fail.
-	    $App->_cacheid( $self->lobject_id );
+	    $App->cacheid( $self->lobject_id );
 	}
 
 	else
@@ -400,7 +400,7 @@ sub _load_envs
 	my @modules;
 	foreach my $app ( @Apps )
 	{
-	    push @modules, $app->_module;
+	    push @modules, $app->module;
 
             # embrace new merged environment
             %ENV = %{$app->load};
@@ -434,12 +434,12 @@ sub _var {
     return ${$self}->{$var};
 }
 
-sub module   { $_[0]->_var('app')->_module }
-sub cacheid  { $_[0]->_var('app')->_cacheid }
-sub _cacheid { my $self = shift; $self->_var('app')->_cacheid(@_) }
-sub _opt     { my $self = shift; $self->_var('app')->_opt(@_) }
+sub module   { $_[0]->_app->module }
+sub cacheid  { $_[0]->_app->cacheid }
+sub _cacheid { my $self = shift; $self->app->cacheid(@_) }
+sub _opt     { my $self = shift; $self->_app->_opt(@_) }
 sub _app     { $_[0]->_var('app') }
-sub _envhash { $_[0]->_var('app')->{ENV} }
+sub _envhash { $_[0]->_app->{ENV} }
 
 # would rather use Object::ID but it uses Hash::FieldHash which
 # (through no fault of its own:
@@ -522,7 +522,7 @@ sub uncache
 
         # don't use normal rules for Site specification as we're trying
         # to delete a specific one.
-	delete $EnvCache{ _mk_cacheid( _modulename( $opt{Site}, $opt{App} ) )};
+	delete $EnvCache{ _modulename( $opt{Site}, $opt{App} )};
     }
 
     return;
@@ -600,13 +600,6 @@ sub _App_Env_Site {
 
 #-------------------------------------------------------
 
-sub _mk_cacheid
-{
-    return join( $;, grep { defined $_ } @_ );
-}
-
-
-#-------------------------------------------------------
 
 sub _exclude_param_check
 {
@@ -868,83 +861,40 @@ sub new
 {
     my ( $class, %opt ) = @_;
 
-    my $self;
+    # make copy of options
+    my $self = bless dclone( \%opt ), $class;
 
-    if ( exists $opt{env} )
+    if ( exists $self->{env} )
     {
-	$opt{opt} = {} unless defined $opt{opt};
-
-	# make sure to get a copy of the passed environment
-	$opt{ENV} = { %{$opt{env}} };
-	delete $opt{env};
+	$self->{opt} = {} unless defined $self->{opt};
+	$self->{ENV} = delete $self->{env};
     }
     else
     {
-	# make copy of options
 
-	$opt{opt} = dclone($opt{opt});
-
-	( $opt{module}, my $app_opts )
-          = eval { App::Env::_require_module( $opt{app}, $opt{opt}{Site} ) };
-        croak( "error loading application environment module for $opt{app}:\n", $@ )
+	( $self->{module}, my $app_opts )
+          = eval { App::Env::_require_module( $self->{app}, $self->{opt}{Site} ) };
+        croak( "error loading application environment module for $self->{app}:\n", $@ )
           if $@;
 
-        die( "application environment module for $opt{app} does not exist\n" )
-          unless defined $opt{module};
+        die( "application environment module for $self->{app} does not exist\n" )
+          unless defined $self->{module};
 
         # merge possible alias AppOpts
-        $opt{opt}{AppOpts} ||= {};
-        $opt{opt}{AppOpts} = { %$app_opts, %{$opt{opt}{AppOpts}} };
+        $self->{opt}{AppOpts} ||= {};
+        $self->{opt}{AppOpts} = { %$app_opts, %{$self->{opt}{AppOpts}} };
 
-	if ( defined $opt{opt}{CacheID} )
-	{
-	    $opt{cacheid} = $opt{opt}{CacheID};
-	}
-	else
-	{
-	    # create a hash of unique stuff which will be folded
-	    # into the cacheid
-	    my %uniq;
-	    $uniq{AppOpts} = $opt{opt}{AppOpts}
-	      if defined $opt{opt}{AppOpts} && keys %{$opt{opt}{AppOpts}};
-
-	    my $digest;
-
-	    if ( keys %uniq )
-	    {
-		local $Storable::canonical = 1;
-		my $digest = freeze( \%uniq );
-
-		# use whatever digest aglorithm we can find.  if none is
-		# found, default to the frozen representation of the
-		# options
-		for my $alg ( qw[ SHA-256 SHA-1 MD5 ] )
-		{
-		    my $ctx = eval { Digest->new( $alg ) };
-
-		    if ( defined $ctx )
-		    {
-			$digest = $ctx->add( $digest )->digest;
-			last;
-		    }
-		}
-
-	    }
-
-	    $opt{cacheid} = App::Env::_mk_cacheid( $opt{module}, $digest );
-	}
+	$self->mk_cacheid;
     }
 
     # return cached entry if possible
-    if ( exists $App::Env::EnvCache{$opt{cacheid}} && ! $opt{opt}{Force} )
+    if ( exists $App::Env::EnvCache{$self->cacheid} && ! $opt{opt}{Force} )
     {
-	$self = $App::Env::EnvCache{$opt{cacheid}};
+	$self = $App::Env::EnvCache{$self->cacheid};
     }
 
     else
     {
-	$self = bless \%opt, $class;
-
 	$self->load unless $self->{NoLoad};
 	delete $self->{NoLoad};
     }
@@ -955,13 +905,66 @@ sub new
 
 #-------------------------------------------------------
 
+sub mk_cacheid
+{
+    my ( $self, $cacheid ) = @_;
+
+    $cacheid = $self->{opt}{CacheID} unless defined $cacheid;
+
+    my @elements;
+
+    if ( defined $cacheid )
+    {
+	push @elements, $cacheid eq 'AppID' ? $self->{module} : $cacheid;
+    }
+    else
+    {
+	# create a hash of unique stuff which will be folded
+	# into the cacheid
+	my %uniq;
+	$uniq{AppOpts} = $self->{opt}{AppOpts}
+	  if defined $self->{opt}{AppOpts} && keys %{$self->{opt}{AppOpts}};
+
+	my $digest;
+
+	if ( keys %uniq )
+	{
+	    local $Storable::canonical = 1;
+	    $digest = freeze( \%uniq );
+
+	    # use whatever digest aglorithm we can find.  if none is
+	    # found, default to the frozen representation of the
+	    # options
+	    for my $alg ( qw[ SHA-256 SHA-1 MD5 ] )
+	    {
+		my $ctx = eval { Digest->new( $alg ) };
+
+		if ( defined $ctx )
+		{
+		    $digest = $ctx->add( $digest )->digest;
+		    last;
+		}
+	    }
+
+	}
+
+	push @elements, $self->{module}, $digest;
+    }
+
+
+    $self->cacheid( join( $;, grep { defined $_ } @elements ) );
+}
+
+
+#-------------------------------------------------------
+
 sub load {
     my ( $self ) = @_;
 
     # only load if we haven't before
     return $self->{ENV} if exists $self->{ENV};
 
-    my $module = $self->{module};
+    my $module = $self->module;
 
     my $envs;
     my $fenvs = $module->can('envs' );
@@ -990,7 +993,7 @@ sub load {
 sub cache {
     my ( $self ) = @_;
 
-    $App::Env::EnvCache{$self->{cacheid}} = $self;
+    $App::Env::EnvCache{$self->cacheid} = $self;
 }
 
 #-------------------------------------------------------
@@ -998,7 +1001,7 @@ sub cache {
 sub uncache {
     my ( $self ) = @_;
 
-    my $cacheid = $self->{cacheid};
+    my $cacheid = $self->cacheid;
 
     delete $App::Env::EnvCache{$cacheid}
       if exists $App::Env::EnvCache{$cacheid}
@@ -1008,8 +1011,8 @@ sub uncache {
 #-------------------------------------------------------
 
 sub _opt     { @_ > 1 ? $_[0]->{opt}     = $_[1] : $_[0]->{opt} };
-sub _cacheid { @_ > 1 ? $_[0]->{cacheid} = $_[1] : $_[0]->{cacheid} };
-sub _module  { $_[0]->{module} };
+sub cacheid { @_ > 1 ? $_[0]->{cacheid} = $_[1] : $_[0]->{cacheid} };
+sub module  { $_[0]->{module} };
 
 
 #-------------------------------------------------------
@@ -1097,17 +1100,32 @@ easily run applications within those environments.
 
 =head2 Environment Caching
 
-By default the environment returned by an application environment
-module is cached and assigned a unique cache id using a signature
-generated from the module's name and the contents of the B<AppOpts>
-hash.  When a new environment is requested (and the C<Force> option is
-false) the cache is searched for a signature matching that of the
-requested environment.
+Environments are (by default) cached to improve performance; the
+default cache id is generated from the name of the Perl module
+which creates the environment and the options passed to it.
+signature.  When a environment is requested its signature is compared
+against those stored in the cache and if matched, the associated
+cached environment is returned.
 
-The cache id key may also be explicitly specified via the B<CacheID>
-option; this will effectively prevent the cached environment from
-being automatically found.  To retrieve a cached environment using its
-cache id use the B<retrieve()> function.
+The cache id is (by default) generated from the full module name
+(beginning with C<App::Env> and including the optional site path --
+see L</Site Specific Contexts>) and the contents of the B<AppOpts>
+hash passed to the module.  If the B<AppOpts> hash is empty, the id is
+just the module name.  The cache id may be explicitly specified with
+the C<CacheID> option.
+
+If C<CacheID> is set to the string C<AppID> the cache id is set to the
+full module name, ignoring the contents of B<AppOpts>.  This is useful
+if an application wishes to load an environment using special options
+but make it available under the more generic cache id.
+
+To prevent cacheing, use the C<Cache> option. It doesn't prevent
+B<App::Env> from I<retrieving> an existing cached environment -- to do
+that, use the C<Force> option, which will result in a freshly
+generated environment.
+
+To retrieve a cached environment using its cache id use the
+B<retrieve()> function.
 
 If multiple applications are loaded via a single call to B<import> or
 B<new> the applications will be loaded incremently in the order
@@ -1115,7 +1133,7 @@ specified.  In order to ensure a properly merged environment the
 applications will be loaded freshly (any caches will be ignored) and
 the merged environment will be cached.  The cache id will by default
 be generated from all of the names of the environment modules invoked;
-this can be overridden using the B<CacheID> option.
+again, this can be overridden using the B<CacheID> option.
 
 =head2 Application Aliases
 
@@ -1264,10 +1282,9 @@ multiple environments are loaded the I<combination> is also cached.
 A unique name for the environment. See L</Environment Caching> for more information.
 
 When used as a shared option for multiple applications, this will be
-used to identify the merged environment.  Note that explicitly setting
-the cache id effectively prevents the environment from being
-automatically reused when a similar environment is requested via the
-B<new()> constructor (see L</Environment Caching>).
+used to identify the merged environment.  If set to the string
+C<AppID>, the full module name will be used as the cache id (ignoring
+the contents of the B<AppOpts> option hash).
 
 =item SysFatal I<boolean>
 
@@ -1378,10 +1395,10 @@ The cloned environment is by default not cached.  If caching is
 requested and a cache id is not provided, a unique id is created --
 it will I<not> be the same as that of the original environment.
 
-This cache id is not based on a signature of the environment, so this
-environment will effectively not be automatically reused when a
-similar environment is requested via the B<new> constructor (see
-L</Environment Caching>).
+This generated cache id is not based on a signature of the
+environment, so this environment will effectively not be automatically
+reused when a similar environment is requested via the B<new>
+constructor (see L</Environment Caching>).
 
 
 =back
@@ -1406,9 +1423,9 @@ for its format.
 
   $env->cache( $cache_state );
 
-If C<$cache_state> is true, cache this environment for the application
-associated with B<$env>.  If C<$cache_state> is false and this
-environment is being cached, delete the cache.
+If C<$cache_state> is true, cache this environment using the object's
+cache id.  If C<$cache_state> is false and this environment is being
+cached, delete the cache.
 
 Note that only the original B<App::Env> object which cached the
 environment may delete it.  Objects which reuse existing, cached,
@@ -1560,6 +1577,7 @@ It has the same argument and returned value convention as the core
 Perl B<exec> command.
 
 =item capture
+
 =item qexec
 
   $output = $env->qexec( $command, @args );

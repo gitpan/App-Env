@@ -33,7 +33,7 @@ is_deeply ( \@values, [ 1, undef, 1 ], 'context 2: value' );
 # context 3
 $env = $app1->env( qr/Site1_App1.*/ );
 ok( 'HASH' eq ref $env, 'context 3: type' );
-is_deeply ( $env, 
+is_deeply ( $env,
 	    { Site1_App1 => 1,
 	      Site1_App1_v1 => 1 }, 'context 3: value' );
 
@@ -59,6 +59,6 @@ test_exclude( [ 'Site1_App1' ], \%subexp, 'exclude: array of scalar' );
 
 test_exclude( sub { my( $var, $val ) = @_;
 		    return $var eq 'Site1_App1' ? 1 : 0 },
-              \%subexp, 
+              \%subexp,
 	      'exclude: code' );
 

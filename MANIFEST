@@ -34,8 +34,10 @@ t/App/Env/Site1/App4.pm
 t/App/Env/Site2/App1.pm
 t/appexec.pl
 t/appexec.t
+t/appid.t
 t/badmodule.t
 t/cache.t
+t/cache_sig.t
 t/clone.t
 t/default.t
 t/env.t

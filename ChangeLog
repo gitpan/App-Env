@@ -1,4 +1,56 @@
-2010-06-02 10:54 -0400  djerius  <djerius@cfa.harvard.edu>  (8f393076b284 [tip])
+2010-06-03 14:17 -0400  djerius  <djerius@cfa.harvard.edu>  (e892fa436be1 [tip])
+
+	* t/appid.t: new file.
+	* t/appid.t:
+	test for CacheId = AppId
+
+2010-06-03 14:07 -0400  djerius  <djerius@cfa.harvard.edu>  (fdb362c4a883)
+
+	* t/cache_sig.t: new file.
+	* lib/App/Env.pm, t/cache_sig.t:
+	fix bug in signature code; never worked!
+
+2010-06-03 12:46 -0400  djerius  <djerius@cfa.harvard.edu>  (df10a07b912c)
+
+	* t/badmodule.t, t/cache.t, t/env.t:
+	cleanup extraneous trailing whitespace
+
+2010-06-03 12:44 -0400  djerius  <djerius@cfa.harvard.edu>  (04161d54281d)
+
+	* lib/App/Env.pm:
+	if CacheID => AppID, environment signature ignores AppOpts.
+
+	* cache id creation is now centralized in an App::Env::_app method.
+	* if CacheID is equal to the string AppID, the signature is generated
+	just from the full module name (as it was in olden times).
+
+2010-06-03 12:41 -0400  djerius  <djerius@cfa.harvard.edu>  (192a3a94287f)
+
+	* lib/App/Env.pm:
+	code cleanup: use accessors isntead of direct access; rename them
+	for consistency.
+
+2010-06-02 17:39 -0400  djerius  <djerius@cfa.harvard.edu>  (50a747222877)
+
+	* lib/App/Env.pm:
+	code clean up: use accessor for _app object
+
+2010-06-02 16:27 -0400  djerius  <djerius@cfa.harvard.edu>  (056c1f7b985a)
+
+	* lib/App/Env.pm:
+	fix pod error
+
+2010-06-02 13:31 -0400  djerius  <djerius@cfa.harvard.edu>  (c97b682e0a99)
+
+	* .hgtags:
+	Added tag 0.21 for changeset 2c4337cc45f8
+
+2010-06-02 13:30 -0400  djerius  <djerius@cfa.harvard.edu>  (2c4337cc45f8 [0.21])
+
+	* ChangeLog, Changes, lib/App/Env.pm:
+	update logs and version for release
+
+2010-06-02 10:54 -0400  djerius  <djerius@cfa.harvard.edu>  (8f393076b284)
 
 	* lib/App/Env.pm, t/clone.t:
 	remove missed vestige of Object::ID. rename object_id to lobject_id

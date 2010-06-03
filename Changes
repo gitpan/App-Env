@@ -1,5 +1,11 @@
 Revision history for Perl extension App::Env.
 
+0.22  Thu Jun  3 12:44:43 EDT 2010
+        - if CacheID is the string 'AppID', the cache id does not
+	  take into account the contents of the AppOpts hash.
+	- new feature from v. 0.20 (cached environments keyed off of
+          AppOpts hash) now actually works.
+
 0.21  Wed Jun  2 10:28:42 EDT 2010
         - no longer uses Object::ID to work around problems with
 	  Hash::FieldHash and older perls.

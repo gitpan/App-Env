@@ -4,13 +4,13 @@ use lib 't';
 
 use App::Env;
 
-eval { 
+eval {
      App::Env::import( 'App1' );
      };
 
 ok( ! $@, "import existent module" );
 
-eval { 
+eval {
      App::Env::import( 'BadModule' );
      };
 
