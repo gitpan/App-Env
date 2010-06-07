@@ -20,6 +20,7 @@ no_index:
     - inc
     - t
 requires:
+  Capture::Tiny: 0
   Env::Path: 0
   File::Basename: 0
   File::Spec::Functions: 0
@@ -35,4 +36,4 @@ requires:
   perl: 5.8.0
 resources:
   license: http://opensource.org/licenses/gpl-3.0.html
-version: 0.22
+version: 0.23

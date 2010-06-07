@@ -1,5 +1,9 @@
 Revision history for Perl extension App::Env.
 
+0.23  Mon Jun  7 16:44:26 EDT 2010
+        - capture() is no longer just an alias for qexec; it can now return
+	  both stderr and stdout.
+
 0.22  Thu Jun  3 12:44:43 EDT 2010
         - if CacheID is the string 'AppID', the cache id does not
 	  take into account the contents of the AppOpts hash.

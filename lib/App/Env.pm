@@ -35,7 +35,7 @@ use Params::Validate qw(:all);
 use Module::Find qw( );
 
 
-our $VERSION = '0.22';
+our $VERSION = '0.23';
 
 use overload
   '%{}' => '_envhash',
@@ -826,7 +826,47 @@ sub qexec
 
 #-------------------------------------------------------
 
-*capture = \&qexec;
+sub capture
+{
+    my $self = shift;
+    my @args = @_;
+
+    local %ENV = %{$self};
+
+    require Capture::Tiny;
+    require IPC::System::Simple;
+
+    # work around bug in Capture::Tiny (v 0.07) which doesn't
+    # recover gracefully if an exception is thrown in the captured
+    # subroutine.
+
+    my $err;
+    my $sub =   $self->_opt->{SysFatal}
+      ? sub {
+	  eval { IPC::System::Simple::system( @args ); };
+	  $err = $@ if $@;
+          }
+      : sub {
+	    CORE::system( @args )
+	  };
+
+    my ( $stdout, $stderr );
+
+    if ( wantarray ) {
+
+	( $stdout, $stderr ) = Capture::Tiny::capture( $sub );
+
+    }
+    else
+    {
+	$stdout = Capture::Tiny::capture( $sub );
+    }
+
+
+    die( $err) if $err;
+
+    return wantarray ? ($stdout, $stderr) : $stdout;
+}
 
 #-------------------------------------------------------
 
@@ -1576,15 +1616,29 @@ This execs the passed command in the environment defined by B<$env>.
 It has the same argument and returned value convention as the core
 Perl B<exec> command.
 
-=item capture
-
 =item qexec
 
   $output = $env->qexec( $command, @args );
+  @lines = $env->qexec( $command, @args );
 
 This acts like the B<qx{}> Perl operator.  It executes the passed
 command in the environment defined by B<$env> and returns its
-(standard) output.
+(standard) output.  If called in a list context the output is
+split into lines.
+
+If the B<SysFatal> flag is set for this environment,
+B<IPC::System::Simple::capture> is called, which will cause this
+method to throw an exception if the command returned a non-zero exit
+value.  It also avoid invoking a shell to run the command if possible.
+
+=item capture
+
+  $stdout = $env->capture( $command, @args );
+  ($stdout, $stderr) = $env->capture( $command, @args );
+
+Execute the passed command in the environment defined by B<$env> and
+returns content of its standard output and (optionally) standard error
+streams.
 
 If the B<SysFatal> flag is set for this environment,
 B<IPC::System::Simple::capture> is called, which will cause this

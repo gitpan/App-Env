@@ -1,4 +1,25 @@
-2010-06-03 14:17 -0400  djerius  <djerius@cfa.harvard.edu>  (e892fa436be1 [tip])
+2010-06-07 16:46 -0400  djerius  <djerius@cfa.harvard.edu>  (d76b3b83b0d3 [tip])
+
+	* t/capture.t:
+	fix test count
+
+2010-06-07 16:44 -0400  djerius  <djerius@cfa.harvard.edu>  (42c81cc36fcb)
+
+	* t/capture.pl, t/capture.t: new file.
+	* Makefile.PL, lib/App/Env.pm, t/capture.pl, t/capture.t:
+	upgrade capture() to return both stdout and stderr
+
+2010-06-03 16:51 -0400  djerius  <djerius@cfa.harvard.edu>  (581e614d0034)
+
+	* .hgtags:
+	Added tag 0.22 for changeset b612c276fbe3
+
+2010-06-03 16:00 -0400  djerius  <djerius@cfa.harvard.edu>  (b612c276fbe3 [0.22])
+
+	* ChangeLog, Changes, lib/App/Env.pm:
+	update logs and version for release
+
+2010-06-03 14:17 -0400  djerius  <djerius@cfa.harvard.edu>  (e892fa436be1)
 
 	* t/appid.t: new file.
 	* t/appid.t:
