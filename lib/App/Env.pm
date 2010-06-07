@@ -35,7 +35,7 @@ use Params::Validate qw(:all);
 use Module::Find qw( );
 
 
-our $VERSION = '0.23';
+our $VERSION = '0.24';
 
 use overload
   '%{}' => '_envhash',
@@ -114,6 +114,8 @@ my %ApplicationOptions =
 
 my %CloneOptions = %{ dclone({ map { $_ => $SharedOptions{$_} } qw[ CacheID Cache SysFatal ]} ) };
 $CloneOptions{Cache}{default} = 0;
+
+my %TempOptions = %{ dclone({ map { $_ => $SharedOptions{$_} } qw[ SysFatal Temp ]} ) };
 
 # options for whom defaults may be changed.  The values
 # in %OptionDefaults are references to the same hashes as in
@@ -371,6 +373,9 @@ sub _load_envs
 	    # should really call $self->cacheid here, but $self
 	    # doesn't have an app attached to it yet so that'll fail.
 	    $App->cacheid( $self->lobject_id );
+
+	    # update Temp compatible options
+	    $App->_opt( { %{$App->_opt}, map { $_ => $opts{$_} } keys %TempOptions } );
 	}
 
 	else
@@ -1050,7 +1055,7 @@ sub uncache {
 
 #-------------------------------------------------------
 
-sub _opt     { @_ > 1 ? $_[0]->{opt}     = $_[1] : $_[0]->{opt} };
+sub _opt    { @_ > 1 ? $_[0]->{opt}     = $_[1] : $_[0]->{opt} };
 sub cacheid { @_ > 1 ? $_[0]->{cacheid} = $_[1] : $_[0]->{cacheid} };
 sub module  { $_[0]->{module} };
 
@@ -1336,7 +1341,10 @@ an exception if the passed command exits with a non-zero error.
 If true, and the requested environment does not exist in the cache,
 create it but do not cache it (this overrides the B<Cache> option).
 If the requested environment does exist in the cache, return an
-uncached clone of it.
+uncached clone of it.  The following options are updated in
+the cloned environment:
+
+  SysFatal
 
 =back
 

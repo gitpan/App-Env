@@ -38,6 +38,8 @@ t/appid.t
 t/badmodule.t
 t/cache.t
 t/cache_sig.t
+t/capture.pl
+t/capture.t
 t/clone.t
 t/default.t
 t/env.t

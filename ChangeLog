@@ -1,4 +1,29 @@
-2010-06-07 16:46 -0400  djerius  <djerius@cfa.harvard.edu>  (d76b3b83b0d3 [tip])
+2010-06-07 17:19 -0400  djerius  <djerius@cfa.harvard.edu>  (deba6d724737 [tip])
+
+	* t/temp.t:
+	fix test count
+
+2010-06-07 17:15 -0400  djerius  <djerius@cfa.harvard.edu>  (538d00154e1b)
+
+	* ChangeLog, Changes, lib/App/Env.pm:
+	update logs and version for release
+
+2010-06-07 17:14 -0400  djerius  <djerius@cfa.harvard.edu>  (45c4eaef5b19)
+
+	* lib/App/Env.pm, t/temp.t:
+	pass SysFatal option to Temp environments
+
+2010-06-07 16:50 -0400  djerius  <djerius@cfa.harvard.edu>  (802e917b22d2)
+
+	* .hgtags:
+	Added tag 0.23 for changeset 9820e61945d2
+
+2010-06-07 16:49 -0400  djerius  <djerius@cfa.harvard.edu>  (9820e61945d2 [0.23])
+
+	* ChangeLog, Changes, lib/App/Env.pm:
+	update logs and version for release
+
+2010-06-07 16:46 -0400  djerius  <djerius@cfa.harvard.edu>  (d76b3b83b0d3)
 
 	* t/capture.t:
 	fix test count

@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 8;
+use Test::More tests => 10;
 
 use lib 't';
 
@@ -34,6 +34,16 @@ $app1->setenv( 'AppEnvTestID' => $$ );
     is( $app1->env('AppEnvTestID'), $$, "verify untouched parent" );
 
     # make sure it hasn't been cached
-    ok( ! defined App::Env::retrieve( $app2->cacheid ) );
+    ok( ! defined App::Env::retrieve( $app2->cacheid ), 'uncached clone' );
+
+}
+
+# check Temp options
+{
+    # ensure that SysFatal isn't set
+    is( $app1->_opt->{SysFatal}, 0, "parent SysFatal" );
+
+    my $app2 = App::Env->new( 'App1', { Temp => 1, SysFatal => 1 } );
+    is( $app2->_opt->{SysFatal}, 1, "clone SysFatal" );
 
 }

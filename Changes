@@ -1,5 +1,9 @@
 Revision history for Perl extension App::Env.
 
+0.24  Mon Jun  7 17:14:37 EDT 2010
+        - the SysFatal option will now be passed on to cloned environments 
+	  created with the Temp option.
+
 0.23  Mon Jun  7 16:44:26 EDT 2010
         - capture() is no longer just an alias for qexec; it can now return
 	  both stderr and stdout.
