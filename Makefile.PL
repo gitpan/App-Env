@@ -21,9 +21,11 @@ requires 'Module::Find';
 requires 'Env::Path';
 requires 'File::Spec::Functions';
 requires 'IPC::System::Simple';
-requires 'Capture::Tiny';
+requires 'Capture::Tiny' => 0.09;
 
 install_script 'bin/appexec';
+
+author_tests( 'xt' );
 
 auto_install;
 

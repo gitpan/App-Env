@@ -3,6 +3,7 @@ ChangeLog
 Changes
 inc/Module/AutoInstall.pm
 inc/Module/Install.pm
+inc/Module/Install/AuthorTests.pm
 inc/Module/Install/AutoInstall.pm
 inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm
@@ -45,7 +46,6 @@ t/default.t
 t/env.t
 t/envstr.t
 t/fatal.t
-t/perlcritic.t
 t/pod-coverage.t
 t/pod.t
 t/retrieve.t
@@ -58,3 +58,4 @@ t/temp.t
 t/use1.t
 t/use2.t
 t/use3.t
+xt/perlcritic.t

@@ -1,4 +1,26 @@
-2010-06-07 17:19 -0400  djerius  <djerius@cfa.harvard.edu>  (deba6d724737 [tip])
+2012-01-13 12:48 -0500  djerius  <djerius@cfa.harvard.edu>  (f602e5fbe464 [tip])
+
+	* lib/App/Env.pm, t/capture.pl, t/capture.t:
+	qexec incorrectly always acted as if it were called in scalar
+	context
+
+2012-01-13 12:47 -0500  djerius  <djerius@cfa.harvard.edu>  (9d0004f64672)
+
+	* Makefile.PL, lib/App/Env.pm:
+	remove workaround for bug in old version of Capture::Tiny; require
+	fixed version of that module
+
+2010-06-09 10:39 -0400  djerius  <djerius@cfa.harvard.edu>  (05d4cd7fdc00)
+
+	* .hgtags:
+	Added tag 0.24 for changeset c72537afe533
+
+2010-06-07 17:19 -0400  djerius  <djerius@cfa.harvard.edu>  (c72537afe533 [0.24])
+
+	* ChangeLog:
+	update log release
+
+2010-06-07 17:19 -0400  djerius  <djerius@cfa.harvard.edu>  (deba6d724737)
 
 	* t/temp.t:
 	fix test count

@@ -35,7 +35,7 @@ use Params::Validate qw(:all);
 use Module::Find qw( );
 
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 
 use overload
   '%{}' => '_envhash',
@@ -824,9 +824,18 @@ sub qexec
 
     require IPC::System::Simple;
 
-    my $res = eval { IPC::System::Simple::capture( @_); };
+    my ( @res, $res );
 
-    $@ ? ( $self->_opt->{SysFatal} ? die($@) : return ) : return $res;
+    if ( wantarray ) {  @res = eval { IPC::System::Simple::capture( @_ ) } }
+    else             {  $res = eval { IPC::System::Simple::capture( @_ ) } }
+
+    if ( $@ ) {
+
+	die($@) if $self->_opt->{SysFatal};
+	return;
+    }
+
+    return wantarray ? @res : $res;
 }
 
 #-------------------------------------------------------
@@ -841,34 +850,25 @@ sub capture
     require Capture::Tiny;
     require IPC::System::Simple;
 
-    # work around bug in Capture::Tiny (v 0.07) which doesn't
-    # recover gracefully if an exception is thrown in the captured
-    # subroutine.
-
-    my $err;
-    my $sub =   $self->_opt->{SysFatal}
-      ? sub {
-	  eval { IPC::System::Simple::system( @args ); };
-	  $err = $@ if $@;
-          }
-      : sub {
-	    CORE::system( @args )
-	  };
+    my $sub = $self->_opt->{SysFatal}
+            ? sub { IPC::System::Simple::system( @args ) }
+	    : sub { CORE::system( @args ) }
+	    ;
 
     my ( $stdout, $stderr );
 
-    if ( wantarray ) {
+    if ( wantarray )
+    {
 
-	( $stdout, $stderr ) = Capture::Tiny::capture( $sub );
+	( $stdout, $stderr ) = eval { Capture::Tiny::capture( $sub ) };
 
     }
     else
     {
-	$stdout = Capture::Tiny::capture( $sub );
+	$stdout = eval { Capture::Tiny::capture( $sub ) };
     }
 
-
-    die( $err) if $err;
+    die( $@) if $@;
 
     return wantarray ? ($stdout, $stderr) : $stdout;
 }
