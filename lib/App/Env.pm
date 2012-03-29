@@ -35,7 +35,7 @@ use Params::Validate qw(:all);
 use Module::Find qw( );
 
 
-our $VERSION = '0.25';
+our $VERSION = '0.26';
 
 use overload
   '%{}' => '_envhash',
@@ -1114,10 +1114,13 @@ App::Env - manage application specific environments
 =head1 DESCRIPTION
 
 B<App::Env> presents a uniform interface to initializing environments
-for applications which require special environments.  The code to
-create such environements is encapsulated in separate modules for each
-application suite (e.g. B<App::Env::MyApp>), while B<App::Env> handles
-the loading, merging, and caching of environments.
+for applications which require special environments.  B<App::Env> only
+handles the loading, merging, and caching of environments; it does not
+create them.  That is done within modules for each application suite
+(e.g. B<App::Env::MyApp>).  B<App::Env> ships with two such modules,
+B<App::Env::Null> which simply returns a snapshot of the current
+environment, and B<App::Env::Example>, which provides example code for
+creating an application specific environment.
 
 B<App::Env> is probably most useful in situations where a Perl program
 must invoke multiple applications each of which may require an
@@ -1127,11 +1130,12 @@ complicated situations.
 
 =head2 Initializing Application Environments
 
-B<App::Env> does not itself provide the environments for applications.
-It relies upon application specific Perl modules to do so.  Such
-modules provide a single entry point (B<envs()>) which will be called
-by B<App::Env> when that environment is requested.  Application
-specific options (e.g. version) may be passed to the module.
+As mentioned above, B<App::Env> does not itself provide the
+environments for applications; it relies upon application specific
+Perl modules to do so.  Such modules must provide an B<envs()>
+function which should return a hash reference containing the
+environment.  Application specific options (e.g. version) may be
+passed to the module.
 
 See B<App::Env::Example> for information on how to write such modules.
 
@@ -1254,6 +1258,23 @@ B<App::Env::Site> module to transparenlty automate things:
 
   1;
 
+=head2 The Null Environment
+
+B<App::Env> provides the C<null> environment, which simply returns a
+snapshot of the current environment.  This may be useful to provide
+fallbacks in case an application specific environment was not found,
+but the code should fallback to using the existing environment.
+
+  $env = eval { App::Env->new( "MyApp" ) } \
+     // App::Env->new( "null", { Force => 1, Cache => 0 } );
+
+As the C<null> environment is a I<snapshot> of the current
+environment, if future C<null> environments should reflect the
+environment at the time they are constructed, C"null" environments
+should not be cached (e.g. C<Cache =E<gt> 0>).  The C<Force =E<gt> 1>
+option is specified to ensure that the environment is not being read
+from cache, just in case a prior C<null> environment was inadvertently
+cached.
 
 =head1 INTERFACE
 

@@ -1,5 +1,12 @@
 Revision history for Perl extension App::Env.
 
+0.26  Thu Mar 29 15:47:34 EDT 2012
+
+[ENHANCEMENT]
+
+* added App::Env::Null module for "null" (i.e. current) environment
+
+
 0.25  Fri Jan 13 12:43:22 EST 2012
 
 [BUG FIX]

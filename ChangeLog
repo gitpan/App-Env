@@ -1,4 +1,33 @@
-2012-01-13 12:48 -0500  djerius  <djerius@cfa.harvard.edu>  (f602e5fbe464 [tip])
+2012-03-29 15:51 -0400  djerius  <djerius@cfa.harvard.edu>  (ee2f56d533db [tip])
+
+	* lib/App/Env/Null.pm: new file.
+	* lib/App/Env.pm, lib/App/Env/Null.pm:
+	distribute Null environment
+
+2012-01-13 13:05 -0500  djerius  <djerius@cfa.harvard.edu>  (031147aa233b)
+
+	* .hgtags:
+	Added tag 0.25 for changeset c7bc36974a6d
+
+2012-01-13 13:05 -0500  djerius  <djerius@cfa.harvard.edu>  (c7bc36974a6d [0.25])
+
+	* ChangeLog, Changes, lib/App/Env.pm:
+	update logs and version for release
+
+2012-01-13 12:59 -0500  djerius  <djerius@cfa.harvard.edu>  (ea3d239f76d1)
+
+	* t/capture.t:
+	forgot to update the number of tests run
+
+2012-01-13 12:59 -0500  djerius  <djerius@cfa.harvard.edu>  (a69ef0949d6a)
+
+	* xt/perlcritic.t: new file.
+	* t/perlcritic.t: deleted file.
+	* Makefile.PL, t/perlcritic.t, xt/perlcritic.t:
+	perlcritic tests are now author tests to avoid test failures on CPAN
+	Testers for rules which I don't agree with.
+
+2012-01-13 12:48 -0500  djerius  <djerius@cfa.harvard.edu>  (f602e5fbe464)
 
 	* lib/App/Env.pm, t/capture.pl, t/capture.t:
 	qexec incorrectly always acted as if it were called in scalar
